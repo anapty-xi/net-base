@@ -17,10 +17,19 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.urls import include
+from rest_framework.response import Response
+
+def health_chek(request):
+    return Response({
+        'status': 'healthy',
+        'service': 'user-service',
+    })
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('users/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('users/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('health/', health_chek),
+    path('user/', include('apps.users.urls')),
 ]
+    
 

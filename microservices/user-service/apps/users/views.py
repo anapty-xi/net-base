@@ -32,6 +32,27 @@ def login_view(request):
             }
         })
     return Response(
-        {'error', 'Invalid credentials'},
+        {'error', 'Неверные учетные данные'},
         status=status.HTTP_401_UNAUTHORIZED
     )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def refresh_token(request):
+    try:
+        refresh_token = request.data.get('refresh')
+        if not refresh_token:
+            return Response(
+                {'error': 'Токен обновления обязателен'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        access = RefreshToken(refresh_token).access_token
+        return Response ({
+            'access': str(access)
+        })
+    except Exception as e:
+        return Response (
+            {'error': 'Неверный токен обновления'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
