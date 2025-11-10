@@ -1,12 +1,11 @@
 from pathlib import Path
-from datetime import timedelta
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-SECRET_KEY = 'django-insecure-a5ymljeycyt-t5o&)30)jx5)(#%1du142^vu!h)6!r+ab+0et('
+SECRET_KEY = 'django-insecure-)2z0b*hrfyy7z5y7djixxa^8^2*cd^$5s#&tqi65+vf7t3w3zv'
 
 
 DEBUG = True
@@ -22,7 +21,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.users',
+    'apps.db_operations',
 ]
 
 MIDDLEWARE = [
@@ -64,19 +63,15 @@ DATABASES = {
     }
 }
 
+
+
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_RENDER_CLASSES': (
         'rest_framework.renders.JSONRender',
     )
-}
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKEN': True
 }
 
 
@@ -116,4 +111,4 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'users.User'
+DB_POOL = None
