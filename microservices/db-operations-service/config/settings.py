@@ -52,6 +52,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+ASGI_APLICATION = 'config.asgi.aplication'
 
 
 
@@ -112,3 +113,5 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DB_POOL = None
+
+CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672/'
