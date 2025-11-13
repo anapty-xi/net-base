@@ -1,26 +1,26 @@
 '''модуль для определения операций выполняющихся при запуске и отключении Uvicorn'''
 
-import psycopg2
+from psycopg2.pool import ThreadedConnectionPool
 
-CONNECTION = None
+DB_POOL = None
 
-def create_db_connection():
-    global CONNECTION
+def create_db_pool():
+    global DB_POOL
     try:
-        CONNECTION = psycopg2.connect(host='127.0.0.1',
+        DB_POOL = ThreadedConnectionPool(5, 10, host='127.0.0.1',
                                  port=5432,
                                  user='postgres',
                                  database='users',
                                  password='1247')
-        print('подключение готово')
+        print('пул готов')
 
 
     except Exception as e:
         print(f'ошибка {e}')
 
-def shutdown_connection():
-    global CONNECTION
-    if CONNECTION:
-        CONNECTION.close()
-        CONNECTION = None
+def shutdown_pool():
+    global DB_POOL
+    if DB_POOL:
+        DB_POOL.closeall()
+        DB_POOL = None
         print('подключение закрыто')

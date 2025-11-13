@@ -1,13 +1,21 @@
+import sys
+sys.path.append('...')
+
+
+
 from celery import shared_task
-import psycopg2
+from config import pool
+
+@shared_task
+def create_pool():
+    pool.create_db_pool()
+
+create_pool.delay()
 
 @shared_task
 def create_table(table_name, cols):
-    connection = psycopg2.connect(host='127.0.0.1',
-                            port=5432,
-                            user='postgres',
-                            database='users',
-                            password='1247')
+    from config import pool
+    connection = pool.DB_POOL.getconn()
     
     cur = connection.cursor()
     statement = f'''CREATE TABLE {table_name} ('''
@@ -16,4 +24,4 @@ def create_table(table_name, cols):
 
     cur.execute(statement[:-1]+');')
     connection.commit()
-    connection.close()
+    pool.DB_POOL.putconn()
