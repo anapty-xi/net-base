@@ -4,18 +4,12 @@ sys.path.append('...')
 
 
 from celery import shared_task
-from config import pool
+from config import celery
 
-@shared_task
-def create_pool():
-    pool.create_db_pool()
-
-create_pool.delay()
 
 @shared_task
 def create_table(table_name, cols):
-    from config import pool
-    connection = pool.DB_POOL.getconn()
+    connection = celery.DB_POOL.getconn()
     
     cur = connection.cursor()
     statement = f'''CREATE TABLE {table_name} ('''
@@ -24,4 +18,4 @@ def create_table(table_name, cols):
 
     cur.execute(statement[:-1]+');')
     connection.commit()
-    pool.DB_POOL.putconn()
+    celery.DB_POOL.putconn(connection)
