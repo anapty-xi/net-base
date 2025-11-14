@@ -8,14 +8,18 @@ from config import celery
 
 
 @shared_task
-def create_table(table_name, cols):
+def create_table(table_name, cols, rows):
     connection = celery.DB_POOL.getconn()
-    
-    cur = connection.cursor()
-    statement = f'''CREATE TABLE {table_name} ('''
-    for col in cols:
-        statement += f'''{col} text,'''
 
-    cur.execute(statement[:-1]+');')
-    connection.commit()
+    create_statement = f'''CREATE TABLE {table_name} ('''
+    for col in cols:
+        create_statement += f'''{col} text,'''
+
+    rows = tuple([tuple(row.split(';')) for row in rows.split()])
+    insert_statement = f"INSERT INTO {table_name} ({', '.join(cols)}) VALUES"
+    placeholders = ', '.join(['%s'] * len(cols))
+    with connection.cursor() as cur:
+        cur.execute(create_statement[:-1]+');')
+        cur.executemany(insert_statement + f' ({placeholders})', rows)
+        connection.commit()
     celery.DB_POOL.putconn(connection)
