@@ -1,5 +1,7 @@
 import psycopg2
 from config import pool
+import requests
+from django.conf import settings
 
 def get_tables_with_cols(table=None):
     connection = pool.DB_POOL.getconn()
@@ -73,3 +75,11 @@ def update_row(table, pk, **kwargs):
         except: 
             return None
         finally: pool.DB_POOL.putconn(connection)
+
+
+def get_user_from_token(token):
+    try:
+        header = {'Authorization': token}
+        response = requests.get(
+            f'{settings.USER_SERVICE_URL}'
+        )

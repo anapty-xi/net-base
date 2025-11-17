@@ -1,3 +1,5 @@
+
+
 from pathlib import Path
 
 
@@ -5,12 +7,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-SECRET_KEY = 'django-insecure-)2z0b*hrfyy7z5y7djixxa^8^2*cd^$5s#&tqi65+vf7t3w3zv'
+SECRET_KEY = 'django-insecure-&lbpqi0)-4&u58noeu2b&(ysq7wp(zt6y0o9@o6681+7dar8!!'
 
 
 DEBUG = True
 
 ALLOWED_HOSTS = []
+
 
 
 
@@ -21,7 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'apps.db_operations',
+    'apps.api_gateway',
 ]
 
 MIDDLEWARE = [
@@ -52,7 +55,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
-ASGI_APLICATION = 'config.asgi.aplication'
 
 
 
@@ -60,19 +62,8 @@ ASGI_APLICATION = 'config.asgi.aplication'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR.parent.parent / 'db.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
-}
-
-
-
-REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
-    'DEFAULT_RENDER_CLASSES': (
-        'rest_framework.renders.JSONRender',
-    )
 }
 
 
@@ -112,8 +103,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-DB_POOL = None
-
-CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672/'
-
-USER_SERVICE_URL = 'hhtp://localhost:8001'
+MICROSERVICES = {
+    'db-operations-service': 'http://localhost:8001',
+    'user-service': 'http://localhost:8002',
+}
