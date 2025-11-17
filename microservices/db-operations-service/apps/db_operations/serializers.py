@@ -26,3 +26,12 @@ class SerializerTableCreate(serializers.Serializer):
 
     def validate_rows(self, value):
         return self.validate_cols(value)
+    
+
+class SerializerQueryConditions(serializers.Serializer):
+    conditions = serializers.JSONField()
+
+
+class SerializerColUpdate(serializers.Serializer):
+    row_pk = serializers.CharField()
+    updates = serializers.JSONField()

@@ -11,7 +11,7 @@ from config import celery
 def create_table(table_name, cols, rows):
     connection = celery.DB_POOL.getconn()
 
-    create_statement = f'''CREATE TABLE {table_name} ('''
+    create_statement = f'''CREATE TABLE {table_name} ({table_name}_id SERIAL PRIMARY KEY, '''
     for col in cols:
         create_statement += f'''{col} text,'''
 
