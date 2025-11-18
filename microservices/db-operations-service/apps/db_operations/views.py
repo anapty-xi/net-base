@@ -1,13 +1,13 @@
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
 from . import tasks
 from .serializers import SerializerTableCreate, SerializerQueryConditions, SerializerColUpdate
 from . import services
+from .permissions import IsAdminCustom,IsAuthenticatedCustom
 
 @api_view(['POST'])
-@permission_classes([AllowAny]) #заменить на админа
+@permission_classes([IsAdminCustom])
 def create_table(request):
     data = SerializerTableCreate(data=request.data)
     if not data.is_valid():
@@ -27,7 +27,7 @@ def create_table(request):
     )
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticatedCustom])
 def get_all_tabels(request):
     result = services.get_tables_with_cols()
     json_res = {}
@@ -43,7 +43,7 @@ def get_all_tabels(request):
     )
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticatedCustom])
 def get_table(request, table):
     result = services.get_tables_with_cols(table)
     cols = [col[0] for col in result]
@@ -55,7 +55,7 @@ def get_table(request, table):
 
 
 @api_view(['DELETE'])
-@permission_classes([AllowAny])
+@permission_classes([IsAdminCustom])
 def delete_table(request, table):
     if not services.delete_table(table):
         return Response(
@@ -69,7 +69,7 @@ def delete_table(request, table):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticatedCustom])
 def get_rows(request, table):
     data = SerializerQueryConditions(data=request.data)
     if data.is_valid():
@@ -85,7 +85,7 @@ def get_rows(request, table):
     )
 
 @api_view(['PATCH'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticatedCustom])
 def update_row(request, table):
     data = SerializerColUpdate(data=request.data)
     if data.is_valid():

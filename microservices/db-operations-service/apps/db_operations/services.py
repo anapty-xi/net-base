@@ -79,7 +79,13 @@ def update_row(table, pk, **kwargs):
 
 def get_user_from_token(token):
     try:
-        header = {'Authorization': token}
+        header = {'Authorization': f'Bearer {token}'}
         response = requests.get(
-            f'{settings.USER_SERVICE_URL}'
+            f'{settings.USER_SERVICE_URL}/user/user/',
+            headers=header,
+            timeout=15
         )
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except: return None

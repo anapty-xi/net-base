@@ -32,6 +32,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'apps.db_operations.middleware.JWTAuthenticationMiddleware',
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -116,4 +117,4 @@ DB_POOL = None
 
 CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672/'
 
-USER_SERVICE_URL = 'hhtp://localhost:8001'
+USER_SERVICE_URL = 'http://localhost:8001'

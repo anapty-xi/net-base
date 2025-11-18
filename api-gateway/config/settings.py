@@ -104,6 +104,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MICROSERVICES = {
-    'db-operations-service': 'http://localhost:8001',
-    'user-service': 'http://localhost:8002',
+    'db-operations-service': 'http://localhost:8002',
+    'user-service': 'http://localhost:8001',
 }
