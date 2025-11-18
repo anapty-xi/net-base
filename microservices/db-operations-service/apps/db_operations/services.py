@@ -1,7 +1,10 @@
-import psycopg2
-from config import pool
 import requests
+import logging
+
+from config import pool
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 def get_tables_with_cols(table=None):
     connection = pool.DB_POOL.getconn()
@@ -29,9 +32,15 @@ def get_tables_with_cols(table=None):
                         table_name,
                         ordinal_position;
                     '''
-        cur.execute(query)
-        pool.DB_POOL.putconn(connection)
-        return cur.fetchall()
+        try:
+            cur.execute(query)
+            return cur.fetchall()
+        except Exception as e:
+            logger.error(f'ошибка запроса {e}')
+            return None
+        finally:
+            pool.DB_POOL.putconn(connection)
+        
     
     
 def delete_table(table):
