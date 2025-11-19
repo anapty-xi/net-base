@@ -113,6 +113,8 @@ LOGGING = {
 }
 
 
+CORS_ALLOWED_ORIGINS = ['http://localhost:8000']
+
 
 LANGUAGE_CODE = 'en-us'
 
