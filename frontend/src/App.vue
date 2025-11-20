@@ -1,24 +1,43 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+
+import TheHeader from './components/Header.vue';
+import TheFooter from './components/Footer.vue';
 </script>
 
 <template>
   <div id="app">
-    <header class="app-header">
-      <nav>
-        <router-link to="/login">Вход</router-link> 
-        </nav>
-    </header>
+    
+    <TheHeader />
 
     <main class="app-content">
       <router-view />
     </main>
 
-    <footer class="app-footer">
-      <p>&copy; anapty-xi</p>
-    </footer>
+    <TheFooter />
   </div>
 </template>
 
+
+<style scoped>
+
+#app {
+  /* 1. Активируем Flexbox */
+  display: flex; 
+  
+  /* 2. !!! УСТАНАВЛИВАЕМ КОЛОНОЧНОЕ НАПРАВЛЕНИЕ !!! */
+  flex-direction: column; 
+  
+  /* 3. Гарантируем, что контейнер занимает всю высоту видимой области,
+        чтобы Main мог растянуться (flex: 1) */
+  min-height: 100vh;
+}
+
+main {
+  /* 4. Позволяем области Main занять всё оставшееся пространство */
+  flex: 1; 
+  padding-bottom: 4rem;
+}
+</style>
 
 

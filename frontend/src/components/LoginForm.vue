@@ -13,7 +13,7 @@
     </div>
     
     <button type="submit" :disabled="isLoading">
-      {{ isLoading ? 'Загрузка...' : 'Войти' }}
+      {{ isLoading ? 'Вход...' : 'Войти' }}
     </button>
     
     <p v-if="error" class="error-message">{{ error }}</p>
@@ -84,11 +84,12 @@ const loginUser = async () => {
 
 <style scoped>
 .login-form {
-  max-width: 400px;
+  width: 20rem;
   margin: 50px auto;
   padding: 20px;
   border: 1px solid #ccc;
   border-radius: 8px;
+
 }
 .form-group {
   margin-bottom: 15px;
@@ -108,7 +109,7 @@ input[type="text"], input[type="password"] {
 button {
   width: 100%;
   padding: 10px;
-  background-color: #4CAF50;
+  background-color: #1C7C54;
   color: white;
   border: none;
   border-radius: 4px;
