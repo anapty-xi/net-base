@@ -1,14 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
+import Homepage from '../views/Homepage.vue'
 
 
 const routes = [
   {
-    path: '/login', // URL, по которому будет доступна страница
+    path: '/login',
     name: 'Login',
-    component: LoginView // Указываем, какой компонент использовать
+    component: LoginView 
   },
-  // ... другие маршруты (например, '/')
+  {
+    path: '/homepage',
+    name: 'Homepage',
+    component: Homepage
+  }
+
 ];
 
 const router = createRouter({

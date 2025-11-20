@@ -23,9 +23,11 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import axios from 'axios';
+import { useRouter } from 'vue-router'
 
 
 const LOGIN_URL = 'http://localhost:8000/user/login/'; 
+const router = useRouter()
 
 
 const credentials = reactive({
@@ -59,6 +61,7 @@ const loginUser = async () => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
       
       console.log('Успешный вход. Токен доступа сохранен:', access);
+      router.push({path: '/homepage'});
       
 
     } else {

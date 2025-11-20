@@ -4,13 +4,13 @@
       
       <div class="avatar-wrapper">
         <img 
-          src="UserPlaceholder" 
+          :src="user_placeholder" 
           alt="Аватар пользователя" 
           class="profile-avatar"
         />
       </div>
 
-      <p class="user-email">{{ username }}</p>
+      <p class="userr-username">{{ username }}</p>
       
       <button @click="logout" class="logout-button">
         Выйти из аккаунта
@@ -21,50 +21,49 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import axios from 'axios';
 import { useRouter } from 'vue-router';
-import UserPlacehilder from '../assets/user_placeholder.png'
+import user_placeholder from '../assets/user_placeholder.png';
 
 
 const USER_URL = 'http://localhost:8000/user/user/'; 
-const username = 'ошибка'
+const username = ref('загрузка...');
+const router = useRouter();
 
+  (async () => {
+    try {
 
-  try {
+      const response = await axios.get(USER_URL);
 
-    const response = await axios.get(LOGIN_URL);
-
-    const user_data = response.data;
-    
-    if (user_data) {
-
-      const username = user_data[username]
+      const user_data = response.data;
       
+      if (user_data) {
 
-    } else {
-      error.value = 'Сервер вернул некорректный ответ';
+        username.value = user_data.username
+        
+
+      } else {
+        username.value = 'ошибка запроса'
+      }
+      
+    } catch (err) {
+      
     }
-    
-  } catch (err) {
-    pass
-  }
+  })();
 
 const logout = () => {
-  // 1. Удаляем все токены из локального хранилища
+
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
-  
-  // 2. Очищаем заголовок авторизации Axios (если он был установлен)
-  // Это важно, чтобы последующие запросы не уходили со старым токеном
-  if (window.axios && window.axios.defaults.headers.common['Authorization']) {
-    delete window.axios.defaults.headers.common['Authorization'];
+
+  if (axios.defaults.headers.common['Authorization']) {
+    delete axios.defaults.headers.common['Authorization'];
   }
 
   console.log('Пользователь вышел. Токены удалены.');
   
-  // 3. Перенаправляем пользователя на страницу входа
-  // Предполагаем, что у вас есть маршрут с именем 'Login'
+
   router.push({ path: '/login' }); 
 };
 </script>
@@ -74,7 +73,6 @@ const logout = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  /* Занимает всю доступную высоту, как ваша форма входа */
   min-height: 100vh; 
 }
 
@@ -96,24 +94,24 @@ const logout = () => {
 .profile-avatar {
   width: 120px;
   height: 120px;
-  border-radius: 50%; /* Делаем круглым */
+  border-radius: 50%; 
   object-fit: cover;
-  border: 4px solid #73E2A7; /* Цвет вашего хедера */
+  border: 4px solid #73E2A7;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
-.user-email {
+.user-username {
   font-size: 1.25rem;
   font-weight: 600;
   color: #333;
   margin-bottom: 25px;
-  word-wrap: break-word; /* Для длинных email */
+  word-wrap: break-word; 
 }
 
 .logout-button {
   width: 100%;
   padding: 12px;
-  background-color: #f44336; /* Красный цвет для кнопки выхода */
+  background-color: #f44336;
   color: white;
   border: none;
   border-radius: 8px;

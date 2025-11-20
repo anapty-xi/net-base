@@ -72,7 +72,7 @@ def refresh_token(request):
 
 class UserView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user

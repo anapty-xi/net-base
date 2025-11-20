@@ -6,6 +6,7 @@
 
 <script setup>
 import LoginForm from '@/components/LoginForm.vue'; 
+import TablesView from '@/components/TablesView.vue'; 
 </script>
 
 <style scoped>
