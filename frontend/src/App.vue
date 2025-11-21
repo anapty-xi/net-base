@@ -1,8 +1,17 @@
 <script setup>
 import { RouterLink, RouterView } from 'vue-router'
+import axios from 'axios';
 
 import TheHeader from './components/Header.vue';
 import TheFooter from './components/Footer.vue';
+
+const token = localStorage.getItem('accessToken');
+if (token) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+} else {
+  delete axios.defaults.headers.common['Authorization'];
+}
+
 </script>
 
 <template>
