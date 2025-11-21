@@ -1,11 +1,12 @@
 <template>
-  <div class="login-page-container">
-    <LoginForm />
+  <div class="table-view-container">
+    <TableView />
   </div>
 </template>
 
 <script setup>
-import LoginForm from '@/components/LoginForm.vue'; 
+import TableView from '../components/TableView.vue'; 
+
 </script>
 
 <style scoped>
