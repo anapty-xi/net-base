@@ -20,6 +20,7 @@ def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
 
+
     if not username or not password:
         logger.error(f'Input data is not defined')
         return Response(
@@ -40,7 +41,7 @@ def login_view(request):
                 'username': user.username,
             }
         })
-    logger.error(f'{username}, {password} are invalid data')
+    logger.info(f'{username}, {password} are invalid data')
     return Response(
         {'error', 'Неверные учетные данные'},
         status=status.HTTP_401_UNAUTHORIZED

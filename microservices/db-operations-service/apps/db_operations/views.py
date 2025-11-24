@@ -93,21 +93,21 @@ def delete_table(request, table):
     )
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticatedCustom])
 def get_rows(request, table):
     '''получание колонок по определенным значениям столбцов'''
 
     data = SerializerQueryConditions(data=request.data)
     if data.is_valid():
-        resp = services.get_rows(table, **request.data.get('conditions'))
+        resp = services.get_rows(table, **data.data['conditions'])
         if resp:
             return Response(
-                {'cols': resp},
+                {'rows': resp[0]},
                 status=status.HTTP_200_OK
             )
     return Response(
-        {'errors': 'Данные не верны'},
+        {'errors': 'данные не верны'},
         status=status.HTTP_400_BAD_REQUEST
     )
 

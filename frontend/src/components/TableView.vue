@@ -1,6 +1,8 @@
 <template>
   <div class="table-schema-editor">
-    <h1><span class="table-name-highlight">{{ tableName }}</span></h1>
+    <h1>
+      <span class="table-name-highlight">{{ tableName }}</span>
+    </h1>
 
     <div v-if="loading" class="state-message loading">
       Загрузка схемы таблицы...
@@ -11,91 +13,158 @@
     </div>
 
     <div v-else class="schema-form">
-
-      
       <form @submit.prevent="submitData" class="data-entry-form">
-        
         <div class="data-table-layout">
-          
           <div class="header-row flex-row">
             <div v-for="field in fields" :key="field" class="header-cell">
               {{ field }}
-
             </div>
           </div>
-          
           <div class="input-row flex-row">
-            <div v-for="field in fields" :key="field.name" class="input-cell">
-              
-              <input 
-                :id="field.name" 
-                :name="field.name"
-                type="text" 
-                :placeholder="field.type"
-                :required="!field.nullable"
+            <div
+              v-for="field in fields"
+              :key="field"
+              class="input-cell"
+            >
+              <input
+                :id="field"
+                :name="field"
+                type="text"
+                :placeholder="field"
+                :required="!field"
                 class="field-input-cell"
+                v-model="filterCriteria[field]" 
+                
               />
-              
             </div>
           </div>
-          
         </div>
-        
-        <button type="submit" class="submit-button">Выполнить поиск / Сохранить</button>
+
+        <button type="submit" class="submit-button" :disabled="submitting">
+          {{ submitting ? 'Поиск...' : 'Выполнить поиск' }}
+        </button>
       </form>
-      
+
       <p v-if="fields.length === 0" class="state-message info">
         В таблице нет полей для отображения.
       </p>
+
+      <hr />
+
+      <div v-if="dataResults.length > 0" class="results-table-container">
+        <table class="results-table">
+          <thead>
+            <tr>
+
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, index) in dataResults" :key="index">
+                {{ row }}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <div v-else-if="submitted && dataResults.length === 0 && !submitting">
+          <p class="state-message info">
+            По вашему запросу строк не найдено.
+          </p>
+      </div>
+
+      <div v-if="submitError" class="state-message error">
+        Ошибка поиска данных: {{ submitError }}
+      </div>
     </div>
   </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useRoute } from 'vue-router';
 
-
 const route = useRoute();
-const tableName = route.params.tableName
+const tableName = route.params.tableName;
 
 
 const fields = ref([]);
 const loading = ref(true);
 const error = ref(null);
 
+const filterCriteria = ref({}); 
+const dataResults = ref([]); 
+const submitting = ref(false); 
+const submitted = ref(false); 
+const submitError = ref(null); 
 
-const BASE_URL = 'http://localhost:8000/db/get_table_info/'; 
 
+const BASE_URL = 'http://localhost:8000/db/'; 
 
+const SEARCH_URL = `${BASE_URL}get_rows/${tableName}/`; 
 
 const fetchSchema = async () => {
+  const SCHEMA_URL = `${BASE_URL}get_table_info/${tableName}/`;
+
+  try {
+    const response = await axios.get(SCHEMA_URL);
+    fields.value = response.data[tableName];
     
-
-    const SCHEMA_URL = `${BASE_URL}${tableName}`; 
-
-
-
-    try {
-        const response = await axios.get(SCHEMA_URL);
-        
-
-        fields.value = response.data[tableName]; 
-        console.log(response.data)
-
+    // Инициализация filterCriteria: 
+    // Заполняем filterCriteria пустыми строками для каждого поля
+    fields.value.forEach(field => {
+        filterCriteria.value[field.name] = '';
+    });
     } catch (err) {
-        console.error(`Ошибка получения схемы для таблицы ${tableName}:`, err);
-        error.value = `Не удалось загрузить схему таблицы. Ошибка: ${err.message}`;
+    console.error(`Ошибка получения схемы для таблицы ${tableName}:`, err);
+    error.value = `Не удалось загрузить схему таблицы. Ошибка: ${err.message}`;
+  } finally {
+    loading.value = false;
+  }
+};
+
+
+const submitData = async () => {
+    
+    submitting.value = true;
+    submitted.value = true;
+    submitError.value = null;
+    dataResults.value = [];
+
+    // Формируем payload запроса: 
+    // Оставляем только те пары { col_name: value }, где value не пустая строка.
+    const queryPayload = Object.keys(filterCriteria.value).reduce((acc, key) => {
+        const value = filterCriteria.value[key];
+        if (value && value.trim() !== '') {
+            // Предполагаем, что запрос должен быть в формате { col_name: value }
+            acc[key] = value.trim(); 
+        }
+        return acc;
+    }, {});
+    
+    // Если критерии не заданы, можно отправить пустой объект,
+    // чтобы получить все строки (зависит от логики вашего бэкенда).
+
+    console.log("Отправляемый payload:", queryPayload);
+    
+    try {
+        // Отправляем POST-запрос с критериями поиска
+        const response = await axios.post(SEARCH_URL, {'conditions': queryPayload});
+        
+        // Ожидаем, что ответ будет массивом строк (объектов)
+        dataResults.value = response.data.rows || response.data; 
+        
+    } catch (err) {
+        console.error('Ошибка при поиске данных:', err);
+        submitError.value = `Не удалось выполнить поиск. Ошибка: ${err.message}`;
     } finally {
-        loading.value = false;
+        submitting.value = false;
     }
 };
 
-// 4. Запуск получения данных при монтировании компонента
+// 3. Запуск получения данных при монтировании компонента (без изменений)
 onMounted(() => {
-    fetchSchema();
+  fetchSchema();
 });
 </script>
 
