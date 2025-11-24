@@ -31,10 +31,8 @@
                 :name="field"
                 type="text"
                 :placeholder="field"
-                :required="!field"
                 class="field-input-cell"
                 v-model="filterCriteria[field]" 
-                
               />
             </div>
           </div>
@@ -44,7 +42,7 @@
           {{ submitting ? 'Поиск...' : 'Выполнить поиск' }}
         </button>
       </form>
-
+      
       <p v-if="fields.length === 0" class="state-message info">
         В таблице нет полей для отображения.
       </p>
@@ -52,18 +50,52 @@
       <hr />
 
       <div v-if="dataResults.length > 0" class="results-table-container">
-        <table class="results-table">
-          <thead>
-            <tr>
+        <div class="table-scroll-wrapper"> 
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th v-for="field in fields" :key="field">
+                  {{ field }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(row, index) in dataResults" :key="row.pkValue || index">
+                
+                <td v-for="field in fields" :key="field" class="result-cell-input">
+                  <input
+                    type="text"
+                    :name="field"
+                    v-model="row.data[field]" 
+                    :class="{'modified': row.isModified[field]}"
+                    @input="markAsModified(row, field)" 
+                  />
+                </td>
+                
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="(row, index) in dataResults" :key="index">
-                {{ row }}
-            </tr>
-          </tbody>
-        </table>
+        <hr class="update-separator" />
+        
+        <div class="global-update-actions">
+          <button 
+            @click="updateAllModifiedRows" 
+            :disabled="!hasAnyModifications || isGlobalUpdating"
+            class="submit-button global-update-button"
+          >
+            {{ isGlobalUpdating ? 'Обновление всех строк...' : 'Обновить все измененные строки' }}
+          </button>
+          
+          <div v-if="globalUpdateError" class="state-message error update-error">
+            Ошибка при массовом обновлении: {{ globalUpdateError }}
+          </div>
+          
+          <div v-if="globalUpdateSuccess > 0" class="state-message success update-success">
+            ✅ Успешно обновлено строк: {{ globalUpdateSuccess }}
+          </div>
+        </div>
       </div>
       
       <div v-else-if="submitted && dataResults.length === 0 && !submitting">
@@ -87,42 +119,66 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 const tableName = route.params.tableName;
 
-
 const fields = ref([]);
-const loading = ref(true);
-const error = ref(null);
+const pkField = ref(null);
+const loading = ref(true); 
+const error = ref(null); 
 
 const filterCriteria = ref({}); 
-const dataResults = ref([]); 
+const dataResults = ref([]);
 const submitting = ref(false); 
 const submitted = ref(false); 
 const submitError = ref(null); 
 
+const hasAnyModifications = ref(false);
+const isGlobalUpdating = ref(false);
+const globalUpdateError = ref(null);
+const globalUpdateSuccess = ref(0);
 
 const BASE_URL = 'http://localhost:8000/db/'; 
-
 const SEARCH_URL = `${BASE_URL}get_rows/${tableName}/`; 
+const UPDATE_URL = `${BASE_URL}update_row/${tableName}/`; 
+
+const enrichRow = (rowData) => {
+    const enriched = {
+        data: rowData,
+        pkValue: rowData[pkField.value], 
+        isModified: {}, 
+        hasModifications: false, 
+    };
+    
+    fields.value.forEach(field => {
+        enriched.isModified[field] = false; 
+    });
+    return enriched;
+};
 
 const fetchSchema = async () => {
   const SCHEMA_URL = `${BASE_URL}get_table_info/${tableName}/`;
 
   try {
     const response = await axios.get(SCHEMA_URL);
-    fields.value = response.data[tableName];
     
-    // Инициализация filterCriteria: 
-    // Заполняем filterCriteria пустыми строками для каждого поля
+    const allFields = response.data[tableName];
+    
+    if (Array.isArray(allFields) && allFields.length > 0) {
+        pkField.value = allFields[0]; 
+        fields.value = allFields; 
+    } else {
+        fields.value = [];
+        pkField.value = null; 
+    }
+    
     fields.value.forEach(field => {
-        filterCriteria.value[field.name] = '';
+        filterCriteria.value[field] = '';
     });
+    
     } catch (err) {
-    console.error(`Ошибка получения схемы для таблицы ${tableName}:`, err);
     error.value = `Не удалось загрузить схему таблицы. Ошибка: ${err.message}`;
   } finally {
     loading.value = false;
   }
 };
-
 
 const submitData = async () => {
     
@@ -130,39 +186,143 @@ const submitData = async () => {
     submitted.value = true;
     submitError.value = null;
     dataResults.value = [];
+    hasAnyModifications.value = false;
 
-    // Формируем payload запроса: 
-    // Оставляем только те пары { col_name: value }, где value не пустая строка.
     const queryPayload = Object.keys(filterCriteria.value).reduce((acc, key) => {
         const value = filterCriteria.value[key];
         if (value && value.trim() !== '') {
-            // Предполагаем, что запрос должен быть в формате { col_name: value }
             acc[key] = value.trim(); 
         }
         return acc;
     }, {});
     
-    // Если критерии не заданы, можно отправить пустой объект,
-    // чтобы получить все строки (зависит от логики вашего бэкенда).
-
-    console.log("Отправляемый payload:", queryPayload);
-    
     try {
-        // Отправляем POST-запрос с критериями поиска
         const response = await axios.post(SEARCH_URL, {'conditions': queryPayload});
         
-        // Ожидаем, что ответ будет массивом строк (объектов)
-        dataResults.value = response.data.rows || response.data; 
+        const structuredRows = response.data.rows || response.data; 
+        
+        if (!Array.isArray(structuredRows) || fields.value.length === 0) {
+             throw new Error("Неверный формат данных от сервера или отсутствует схема таблицы.");
+        }
+
+        const restructuredRows = [];
+        const fieldNames = fields.value;
+        const expectedColumns = fieldNames.length;
+        
+        for (const flatRow of structuredRows) {
+            
+            if (!Array.isArray(flatRow) || flatRow.length !== expectedColumns) {
+                console.warn('Пропущена строка из-за несовпадения количества столбцов:', flatRow);
+                continue; 
+            }
+
+            const rowData = {};
+            
+            for (let j = 0; j < expectedColumns; j++) {
+                const fieldName = fieldNames[j];
+                const fieldValue = flatRow[j];
+                
+                rowData[fieldName] = (fieldValue === null || fieldValue === undefined) ? '' : String(fieldValue); 
+            }
+            
+            restructuredRows.push(enrichRow(rowData));
+        }
+        
+        dataResults.value = restructuredRows;
         
     } catch (err) {
-        console.error('Ошибка при поиске данных:', err);
         submitError.value = `Не удалось выполнить поиск. Ошибка: ${err.message}`;
     } finally {
         submitting.value = false;
     }
 };
 
-// 3. Запуск получения данных при монтировании компонента (без изменений)
+const markAsModified = (row, fieldName) => {
+    if (!row.isModified[fieldName]) {
+        row.isModified[fieldName] = true; 
+        row.hasModifications = true; 
+        
+        hasAnyModifications.value = true;
+    }
+    globalUpdateError.value = null;
+    globalUpdateSuccess.value = 0; 
+};
+
+const updateAllModifiedRows = async () => {
+    if (!hasAnyModifications.value || isGlobalUpdating.value || !pkField.value) {
+        return; 
+    }
+isGlobalUpdating.value = true;
+    globalUpdateError.value = null;
+    globalUpdateSuccess.value = 0;
+
+    const updatePromises = [];
+    const modifiedRows = [];
+
+    dataResults.value.forEach(row => {
+        if (row.hasModifications) {
+            const updates = {};
+            fields.value.forEach(field => {
+                if (row.isModified[field]) {
+                    updates[field] = row.data[field];
+                }
+            });
+            
+            const singleUpdatePayload = {
+                row_pk: String(row.pkValue),
+                updates: updates
+            };
+
+            const promise = axios.post(UPDATE_URL, singleUpdatePayload);
+            
+            updatePromises.push(promise);
+            modifiedRows.push(row);
+        }
+    });
+
+    if (updatePromises.length === 0) {
+        isGlobalUpdating.value = false;
+        return;
+    }
+
+    try {
+        const results = await Promise.allSettled(updatePromises);
+        
+        let successfulUpdates = 0;
+        let failedUpdates = 0;
+        
+        results.forEach((result, index) => {
+            const row = modifiedRows[index];
+            
+            if (result.status === 'fulfilled') {
+                fields.value.forEach(field => {
+                    row.isModified[field] = false;
+                });
+                row.hasModifications = false;
+                successfulUpdates++;
+            } else {
+                failedUpdates++;
+                console.error( `Ошибка обновления строки ${row.pkValue}: `, result.reason);
+            }
+        });
+        
+        globalUpdateSuccess.value = successfulUpdates;
+        
+        if (failedUpdates > 0) {
+            globalUpdateError.value =  `Обновлено ${successfulUpdates} строк. Ошибка при обновлении ${failedUpdates} строк. Проверьте консоль для деталей.`;
+        } else {
+            hasAnyModifications.value = false;
+        }
+        
+        hasAnyModifications.value = dataResults.value.some(row => row.hasModifications);
+
+    } catch (error) {
+        globalUpdateError.value = `Критическая ошибка при отправке запросов: ${error.message}`;
+    } finally {
+        isGlobalUpdating.value = false;
+    }
+};
+
 onMounted(() => {
   fetchSchema();
 });
@@ -175,7 +335,7 @@ onMounted(() => {
   background-color: #f7f7f7;
   border-radius: 10px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-  max-width: 800px;
+  max-width: 100%;
   margin: 40px auto;
   font-family: 'Arial', sans-serif;
 }
@@ -192,7 +352,7 @@ h1 {
   font-weight: bold;
 }
 
-/* Сообщения о состоянии */
+/* 1. Сообщения о состоянии (Loading/Error/Info) */
 .state-message {
   padding: 15px;
   border-radius: 4px;
@@ -213,55 +373,76 @@ h1 {
   color: #f5222d;
   border: 1px solid #ffbb96;
 }
-.instruction {
-    margin-bottom: 25px;
-    font-size: 1.1em;
-    color: #555;
-    font-style: italic;
+
+.info {
+  background-color: #f0f0f0;
+  color: #555;
+  border: 1px solid #ccc;
 }
 
-/* Группа поля */
-.field-group {
-  margin-bottom: 20px;
-  padding: 15px;
-  background-color: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-}
-
-.field-label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #333;
-  font-size: 1.05em;
-}
-
-.field-type {
-  font-weight: normal;
-  color: #6c757d;
-  font-size: 0.9em;
-  margin-left: 5px;
-}
-
-.required {
-  color: #f5222d;
-  margin-left: 5px;
-}
-
-.field-input {
-  width: 100%;
-  padding: 10px;
+/* 2. Стили Формы Фильтрации (Горизонтальный Layout) */
+.data-table-layout {
   border: 1px solid #ccc;
   border-radius: 4px;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
+  overflow: hidden; 
+  background-color: #fff;
+  margin-bottom: 20px;
+  display: flex; 
+  flex-direction: column;
 }
 
-.field-input:focus {
+.flex-row {
+  display: flex;
+  width: 100%;
+}
+
+.header-row {
+  border-bottom: 1px solid #ccc;
+}
+
+.header-cell {
+  flex-grow: 1; 
+  flex-basis: 0; 
+  padding: 10px 8px;
+  font-weight: bold;
+  text-align: center;
+  border-right: 1px solid #ddd;
+  background-color: #f0f0f0;
+  font-size: 0.9em;
+  color: #333;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.header-cell:last-child {
+  border-right: none;
+}
+
+.input-cell {
+  flex-grow: 1; 
+  flex-basis: 0; 
+  padding: 5px 8px;
+  border-right: 1px solid #ddd;
+}
+
+.input-cell:last-child {
+  border-right: none;
+}
+
+.field-input-cell {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #eee; 
+  border-radius: 4px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.field-input-cell:focus {
   border-color: #007bff;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.25);
 }
 
 .submit-button {
@@ -278,79 +459,118 @@ h1 {
   transition: background-color 0.2s;
 }
 
-.submit-button:hover {
+.submit-button:hover:not(:disabled) {
   background-color: #218838;
 }
 
-
-/* Ваши существующие стили */
-.table-schema-editor {
-  /* ... */
-  max-width: 100%; /* Увеличим ширину, чтобы уместить много столбцов */
+.submit-button:disabled {
+  background-color: #94d3a2;
+  cursor: not-allowed;
 }
 
-/* ... (прочие стили h1, state-message и т.д.) ... */
+/* 3. Стили Таблицы Результатов и Обновления */
 
-/* ---------------------------------------------------- */
-/* НОВЫЕ СТИЛИ ДЛЯ ГОРИЗОНТАЛЬНОГО ОТОБРАЖЕНИЯ (Excel-стиль) */
-/* ---------------------------------------------------- */
-
-.data-table-layout {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  overflow: hidden; /* Обрезает содержимое, если ширина превышает контейнер */
-  background-color: #fff;
-  margin-bottom: 20px;
+.table-scroll-wrapper {
+  overflow-x: auto;
+  margin-top: 15px;
 }
 
-/* Класс для горизонтальных рядов с Flexbox */
-.flex-row {
-  display: flex;
+.results-table {
   width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  min-width: 800px;
+  table-layout: fixed;
 }
 
-/* Ячейка заголовка */
-.header-cell {
-  flex-grow: 1; /* Распределяем пространство равномерно */
-  flex-basis: 0; /* Базовый размер 0, чтобы flex-grow работал лучше */
-  padding: 10px 8px;
-  font-weight: bold;
-  text-align: center;
-  border-right: 1px solid #ddd;
-  background-color: #f0f0f0; /* Серый фон для заголовков */
+.results-table th, .results-table td {
+  padding: 0;
+  border: 1px solid #e0e0e0;
+  text-align: left;
   font-size: 0.9em;
-  color: #333;
+  height: 40px; 
 }
 
-/* Убираем правую границу у последнего заголовка */
-.header-cell:last-child {
-  border-right: none;
+.results-table th {
+  padding: 8px 10px;
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-
-/* Ячейка ввода */
-.input-cell {
-  flex-grow: 1; 
-  flex-basis: 0; 
-  padding: 5px 8px;
-  border-right: 1px solid #ddd;
-  border-top: 1px solid #ccc;
+.result-cell-input {
+  padding: 0; 
 }
 
-/* Убираем правую границу у последнего поля ввода */
-.input-cell:last-child {
-  border-right: none;
-}
-
-.field-input-cell {
+.results-table input {
   width: 100%;
-  padding: 5px;
-  border: 1px solid #eee; /* Более тонкая граница */
-  border-radius: 4px;
+  height: 100%;
+  padding: 8px;
   box-sizing: border-box;
-  text-align: center; /* Центрируем текст */
+  border: none;
+  background-color: transparent;
+  transition: background-color 0.2s;
 }
 
-/* ... (submit-button и прочие стили остаются без изменений) ... */
+/* Фокус на поле ввода */
+.results-table input:focus {
+  background-color: #fffde7; 
+  outline: 1px solid #ffc107;
+  border-radius: 0;
+}
+
+/* Выделение измененного поля */
+.results-table input.modified {
+  background-color: #e6ffed; /* Светло-зеленый фон */
+  color: #1890ff;
+}
+
+/* 4. Стили Общей Кнопки и Сообщений */
+
+.update-separator {
+  margin: 15px 0;
+  border: 0;
+  border-top: 1px solid #eee;
+}
+
+.global-update-actions {
+  margin-top: 25px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.global-update-button {
+  /* Переопределяем submit-button для глобальной кнопки */
+  margin-top: 0;
+  width: 90%;
+  padding: 15px;
+  font-size: 1.2em;
+  background-color: #007bff; /* Синий цвет для действия обновления */
+}
+
+.global-update-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.update-error {
+  margin-top: 15px;
+  background-color: #fff2e8;
+  color: #f5222d;
+  border: 1px solid #ffbb96;
+}
+
+.update-success {
+  margin-top: 15px;
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+  font-size: 1em;
+}
 
 </style>

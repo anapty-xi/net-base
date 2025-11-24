@@ -103,7 +103,7 @@ def get_rows(request, table):
         resp = services.get_rows(table, **data.data['conditions'])
         if resp:
             return Response(
-                {'rows': resp[0]},
+                {'rows': resp},
                 status=status.HTTP_200_OK
             )
     return Response(
@@ -111,7 +111,7 @@ def get_rows(request, table):
         status=status.HTTP_400_BAD_REQUEST
     )
 
-@api_view(['PATCH'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticatedCustom])
 def update_row(request, table):
     '''обновление значений'''
