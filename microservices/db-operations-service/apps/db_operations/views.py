@@ -2,9 +2,10 @@ import logging
 
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
-from . import tasks
+from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.parsers import MultiPartParser, FormParser
 from .serializers import SerializerTableCreate, SerializerQueryConditions, SerializerColUpdate
+from . import tasks
 from . import services
 from .permissions import IsAdminCustom,IsAuthenticatedCustom
 
@@ -12,25 +13,37 @@ logger = logging.getLogger(__name__)
 
 @api_view(['POST'])
 @permission_classes([IsAdminCustom])
+@parser_classes([MultiPartParser, FormParser])
 def create_table(request):
     '''создание и заполнение таблицы по переданному csv файлу'''
 
-    data = SerializerTableCreate(data=request.data)
-    if not data.is_valid():
-        logger.error('invalid data')
-        return Response (
-            {'errors': data.errors},
+    if 'file' not in request.data:
+        return Response(
+            {'error': 'csv файл необходим'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    table_file_bytes = request.data['file']
+    if not table_file_bytes.name.endswith('.csv'):
+        return Response(
+            {'error': 'файл должен быть csv'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
-    table_title = request.data.get('table_title')
-    cols = request.data.get('cols').split(';')
-    rows = request.data.get('rows')
+    table_title = table_file_bytes.name.split('.')[0]
+    cols = table_file_bytes.file.readline().decode('utf-8-sig').strip().split(';')
+    # if cols[0][0] == r'\':
+    #     return Response(
+    #         {'error': 'некоректная кодировка, используйте utf-8-sig'},
+    #         status=status.HTTP_400_BAD_REQUEST
+    #     )
+
+    rows = table_file_bytes.file.read().decode('utf-8-sig')
 
     tasks.create_table.delay(table_title, cols, rows)
-    logger.info('Table creating')
     return Response (
-        {'task': 'ready'},
+        {'title:': table_title,
+         'cols': cols,
+         'rows': rows},
         status=status.HTTP_201_CREATED
     )
 
