@@ -1,12 +1,15 @@
+import os
+
 from pathlib import Path
 from datetime import timedelta
+from dotenv import load_dotenv
 
-
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 
-SECRET_KEY = 'django-insecure-a5ymljeycyt-t5o&)30)jx5)(#%1du142^vu!h)6!r+ab+0et('
+SECRET_KEY = str(os.getenv('SECRET_KEY'))
 
 
 DEBUG = True
@@ -113,7 +116,7 @@ LOGGING = {
 }
 
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8000']
+CORS_ALLOWED_ORIGINS = [str(os.getenv('API_GATE_URL'))]
 
 
 LANGUAGE_CODE = 'en-us'

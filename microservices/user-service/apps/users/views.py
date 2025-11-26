@@ -4,10 +4,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
 from rest_framework import generics
 from .serializers import UserSerializer
+from . import services
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +19,6 @@ def login_view(request):
     username = request.data.get('username')
     password = request.data.get('password')
 
-
     if not username or not password:
         logger.error(f'Input data is not defined')
         return Response(
@@ -28,10 +26,10 @@ def login_view(request):
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    user = authenticate(username=username, password=password)
+    user = services.authenticate(username=username, password=password)
     logger.info('User authenticated')
-    if user and user.is_active:
-        refresh = RefreshToken.for_user(user)
+    refresh = services.get_tokens_for_user(user)
+    if refresh:
         logger.info('user login')
         return Response ({
             'access': str(refresh.access_token),
@@ -60,18 +58,19 @@ def refresh_token(request):
                 {'error': 'Токен обновления обязателен'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        access = RefreshToken(refresh_token).access_token
+        access = services.get_access_by_refresh(refresh_token)
         return Response ({
             'access': str(access)
         })
     except Exception as e:
         return Response (
-            {'error': 'Неверный токен обновления'},
+            {'error': e},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
 
 class UserView(generics.RetrieveAPIView):
+    '''отправка данных пользователя, если предоставлен access токен'''
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
