@@ -3,10 +3,26 @@ import logging
 
 from config import pool
 from django.conf import settings
+from django.core.files.uploadedfile import UploadedFile
 
 logger = logging.getLogger(__name__)
 
-def get_tables_with_cols(table=None):
+class CsvHandler:
+    '''класс предосталяющий части таблицы для ее создания'''
+    def __init__(self, file: UploadedFile):
+        if not file.name.endswith('.csv'):
+            raise TypeError
+        self.file = file
+    def table_title(self):
+        return self.file.name.endswith('.csv')
+    def cols(self):
+        return self.file.file.readline().decode('utf-8-sig').strip().split(';')
+    def rows(self):
+        return self.file.file.read().decode('utf-8')
+
+
+
+def get_tables_with_cols(table=None):  # TODO: подумать над сохранением состояния
     connection = pool.DB_POOL.getconn()
     with connection.cursor() as cur:
         if table:
@@ -34,12 +50,19 @@ def get_tables_with_cols(table=None):
                     '''
         try:
             cur.execute(query)
-            return cur.fetchall()
+            result = cur.fetchall()
         except Exception as e:
             logger.error(f'ошибка запроса {e}')
             return None
         finally:
             pool.DB_POOL.putconn(connection)
+        json_res = {}
+        for table, col in result:
+            if table in json_res.keys():
+                json_res[table].append(col)
+            else:
+                json_res[table]=[col]
+        return json_res
         
     
     

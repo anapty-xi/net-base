@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
-from .serializers import SerializerTableCreate, SerializerQueryConditions, SerializerColUpdate
+from .serializers import SerializerQueryConditions, SerializerColUpdate
 from . import tasks
 from . import services
 from .permissions import IsAdminCustom,IsAuthenticatedCustom
@@ -22,28 +22,15 @@ def create_table(request):
             {'error': 'csv файл необходим'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    table_file_bytes = request.data['file']
-    if not table_file_bytes.name.endswith('.csv'):
+    try:
+        file = services.CsvHandler(request.data['file'])
+    except TypeError:
         return Response(
             {'error': 'файл должен быть csv'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    table_title = table_file_bytes.name.split('.')[0]
-    cols = table_file_bytes.file.readline().decode('utf-8-sig').strip().split(';')
-    # if cols[0][0] == r'\':
-    #     return Response(
-    #         {'error': 'некоректная кодировка, используйте utf-8-sig'},
-    #         status=status.HTTP_400_BAD_REQUEST
-    #     )
-
-    rows = table_file_bytes.file.read().decode('utf-8-sig')
-
-    tasks.create_table.delay(table_title, cols, rows)
+    tasks.create_table.delay(file.table_title, file.cols, file.rows)
     return Response (
-        {'title:': table_title,
-         'cols': cols,
-         'rows': rows},
         status=status.HTTP_201_CREATED
     )
 
@@ -58,15 +45,8 @@ def get_all_tabels(request):
             {'error': 'ошибка запроса к бд'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    json_res = {}
-    for table, col in result:
-        if table in json_res.keys():
-            json_res[table].append(col)
-        else:
-            json_res[table]=[col]
-
     return Response(
-        {'tabels': json_res},
+        {'tabels': result},
         status=status.HTTP_200_OK
     )
 
@@ -81,9 +61,8 @@ def get_table(request, table):
             {'error': 'таблицы не существует'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    cols = [col[0] for col in result]
     return Response(
-        {table: cols},
+        {table: result},
         status=status.HTTP_200_OK
     )
 
@@ -113,10 +92,10 @@ def get_rows(request, table):
 
     data = SerializerQueryConditions(data=request.data)
     if data.is_valid():
-        resp = services.get_rows(table, **data.data['conditions'])
-        if resp:
+        rows = services.get_rows(table, **data.data['conditions'])
+        if rows:
             return Response(
-                {'rows': resp},
+                {'rows': rows},
                 status=status.HTTP_200_OK
             )
     return Response(
@@ -133,8 +112,7 @@ def update_row(request, table):
     if data.is_valid():
         pk = request.data.get('row_pk')
         updates = request.data.get('updates')
-        resp = services.update_row(table, pk, **updates)
-        if resp:
+        if services.update_row(table, pk, **updates):
             logger.info(f'Updated table {table}, pk={pk}, data={updates}')
             return Response(
                 {table: 'обновление успешно'},
