@@ -21,6 +21,6 @@ def create_db_pool():
 def shutdown_pool():
     global DB_POOL
     if DB_POOL:
-        DB_POOL.closeall()
+        #DB_POOL.closeall()
         DB_POOL = None
         print('подключение закрыто')
