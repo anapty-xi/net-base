@@ -6,7 +6,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import generics
 from .serializers import UserSerializer
-from . import services
+from .usecases.login_user import LoginUser
+from .usecases.create_token import CreateTokens
+from .usecases.refresh_token import RefreshToken
+from .infrastructure.jwt_django_authentication import JWTAuthentication
 
 logger = logging.getLogger(__name__)
 
@@ -25,15 +28,15 @@ def login_view(request):
             {'error': 'Юзернейм и пароль необходимы для входа'},
             status=status.HTTP_400_BAD_REQUEST
         )
-
-    user = services.authenticate(username=username, password=password)
-    logger.info('User authenticated')
-    refresh = services.get_tokens_for_user(user)
+    auth_infrastructure = JWTAuthentication()
+    user = LoginUser(auth_infrastructure).execute(username, password)
+    logger.info('User login')
+    refresh, access = CreateTokens(auth_infrastructure).execute(user)
     if refresh:
-        logger.info('user login')
+        logger.info('User login')
         return Response ({
-            'access': str(refresh.access_token),
-            'refresh': str(refresh),
+            'access': access,
+            'refresh': refresh,
             'user': {
                 'id': user.id,
                 'username': user.username,
@@ -58,13 +61,14 @@ def refresh_token(request):
                 {'error': 'Токен обновления обязателен'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        access = services.get_access_by_refresh(refresh_token)
+        token_infrastructure = JWTAuthentication()
+        access = RefreshToken(token_infrastructure).execute(refresh_token)
         return Response ({
             'access': str(access)
         })
     except Exception as e:
         return Response (
-            {'error': e},
+            {'error': str(e)},
             status=status.HTTP_401_UNAUTHORIZED
         )
     

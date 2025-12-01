@@ -4,12 +4,13 @@ from typing import Optional
 
 @dataclass
 class User:
+    is_active: bool
+    is_staff: bool     
     id: Optional[int] = None
     username: str = ''
-    is_active: bool
-    is_staff: bool
-    crated_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+   
 
     def activate(self) -> None:
         self.is_active = True
