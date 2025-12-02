@@ -1,0 +1,16 @@
+from typing import Optional, Protocol, List, Dict
+from ..entities.table import Table
+
+
+class TableGayeway(Protocol):
+    def create_table(self, table: Table) -> bool:
+        ...
+    def get_table_info(self, title: str) -> List[List[str]]:
+        ...
+    def update_row(self, title: str, row_id: str, updates: Dict[str:str]):
+        ...
+    def delete_table(self, title: str):
+        ...
+    def get_rows(self, title: str, query_params: Dict[str:str]):
+        ...
+    
