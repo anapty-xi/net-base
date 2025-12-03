@@ -14,11 +14,11 @@ app.autodiscover_tasks()
 
 @worker_process_init.connect
 def init_worker(**kwargs):
-    pool.create_db_pool()
+    pool.create_db_engine()
 
 
 
 @worker_process_shutdown.connect
 def shutdown_pool(**kwargs):
     print('hi')
-    pool.shutdown_pool()
+    pool.shutdown_engine()

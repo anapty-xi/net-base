@@ -4,7 +4,7 @@ from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 from . import pool
-pool.create_db_pool()
+pool.create_db_engine()
 
 
 django.setup()
@@ -15,7 +15,7 @@ import atexit
 import signal
 
 def shutdown():
-    pool.shutdown_pool()
+    pool.shutdown_engine()
 
 atexit.register(shutdown)
 

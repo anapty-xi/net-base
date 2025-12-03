@@ -1,26 +1,32 @@
 '''модуль для определения операций выполняющихся при запуске и отключении Uvicorn'''
 
-from psycopg2.pool import ThreadedConnectionPool
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
+from sqlalchemy.pool import QueuePool
 
-DB_POOL = None
+DB_ENGINE: Engine | None = None
 
-def create_db_pool():
-    global DB_POOL
+def create_db_engine() -> None:
+    global DB_ENGINE
     try:
-        DB_POOL = ThreadedConnectionPool(5, 10, host='127.0.0.1',
-                                 port=5432,
-                                 user='postgres',
-                                 database='users',
-                                 password='1247')
+        DB_ENGINE = create_engine(
+            "postgresql+psycopg2://postgres:1247@127.0.0.1:5432/users",
+            poolclass=QueuePool,
+            pool_size=5,
+            max_overflow=10,
+            pool_pre_ping=True,
+            pool_recycle=3600,
+            echo=False,  
+            )
         print('пул готов')
 
 
     except Exception as e:
         print(f'ошибка {e}')
 
-def shutdown_pool():
-    global DB_POOL
-    if DB_POOL:
-        #DB_POOL.closeall()
-        DB_POOL = None
+def shutdown_engine():
+    global DB_ENGINE
+    if DB_ENGINE:
+        DB_ENGINE.dispose()
+        DB_ENGINE = None
         print('подключение закрыто')

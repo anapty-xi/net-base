@@ -14,7 +14,7 @@ def validate_cols(cols: List[str]) -> List[str]:
         raise ValueError(f'максимальное количество столбцов 32')
     for index, col in enumerate(cols):
         if ' ' in col:
-            cols = '_'.join(cols.split())
+            col = '_'.join(col.split())
             cols[index] = col
         if len(col) > 64:
             raise ValueError(f'длина названия столбца {len(col)} символа. максимально 64')
@@ -32,3 +32,4 @@ class Table(BaseModel):
         for row in self.rows:
             if len(row) != len(self.cols):
                 raise ValueError(f'количество столбцов {len(self.cols)} не совпадает с количеством значений в строке {len(row)}')
+        return self
