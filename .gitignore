@@ -1,1 +1,2 @@
 microservices/user-service/.env
+microservices/db-operations-service/db-ops-venv
