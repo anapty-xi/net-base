@@ -22,9 +22,8 @@ class CreateTable(UseCase):
     
 class TableInfo(UseCase):
     def execute(self, title=None):
-        tables_data = self.infrastructure_class.get_table_info(title)
-        table_entities = [Table(table[0], table[1], table[2]) for table in tables_data] #TODO придумать правильную форму
-        return table_entities
+        tables_data = self.infrastructure_class.get_table_info(title)#TODO придумать правильную форму
+        return tables_data
     
 class UpdateTable(UseCase):
     def execute(self, title: str, row_id: str, updates: Dict[str, str]):

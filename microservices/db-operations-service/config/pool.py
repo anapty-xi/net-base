@@ -1,8 +1,14 @@
 '''модуль для определения операций выполняющихся при запуске и отключении Uvicorn'''
 
+import os
+
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.pool import QueuePool
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 DB_ENGINE: Engine | None = None
 
@@ -10,7 +16,7 @@ def create_db_engine() -> None:
     global DB_ENGINE
     try:
         DB_ENGINE = create_engine(
-            "postgresql+psycopg2://postgres:1247@127.0.0.1:5432/users",
+            str(os.getenv('DB_URL')),
             poolclass=QueuePool,
             pool_size=5,
             max_overflow=10,

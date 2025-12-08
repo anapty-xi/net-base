@@ -1,4 +1,4 @@
-from ....config.pool import DB_ENGINE
+from config.pool import DB_ENGINE
 from ..entities.table import Table as EntityTable
 from sqlalchemy.schema import Table, Column
 from ..usecases.table_gateway_protocol import TableGateway
@@ -12,7 +12,7 @@ class RepositoryManager(TableGateway):
     def __init__(self):
         self.engine: Engine = DB_ENGINE
 
-    def get_table_obj(self, title: str) -> Table:
+    def _get_table_obj(self, title: str) -> Table:
         try:  
             return Table(title, metadata_obj, autoload_with=self.engine)
         except:
@@ -38,7 +38,7 @@ class RepositoryManager(TableGateway):
 
     def get_table_info(self, title: str) -> Dict[str, List[str]]:
         if title:
-            table = self.get_table_obj(title)
+            table = self._get_table_obj(title)
             table_schema = {table.name: [col.name for col in table.columns]}
         else:
             metadata_obj.reflect(bind=self.engine)
@@ -46,7 +46,7 @@ class RepositoryManager(TableGateway):
         return table_schema
     
     def update_row(self, title: str, row_id: str, updates: Dict[str, str]) -> bool:
-        table = self.get_table_obj(title)
+        table = self._get_table_obj(title)
         table_cols = [col.name for col in table.columns]
         for col in updates:
             if col not in table_cols:
@@ -56,14 +56,15 @@ class RepositoryManager(TableGateway):
             connection.execute(stmt)
         return True
     
-    def delete_table(self, title: str) -> None:
-        table = self.get_table_obj(title)
+    def delete_table(self, title: str) -> bool:
+        table = self._get_table_obj(title)
         table.drop(self.engine)
         if title in metadata_obj.tables:
             metadata_obj.remove(table)
+        return True
 
     def get_rows(self, title: str, query_params: Dict[str, str]) -> List[List[str]]:
-        table = self.get_table_obj(title)
+        table = self._get_table_obj(title)
         table_cols = [col.name for col in table.columns]
         for col in query_params:
             if col not in table_cols:
