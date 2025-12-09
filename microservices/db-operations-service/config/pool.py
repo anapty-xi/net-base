@@ -1,4 +1,6 @@
-'''модуль для определения операций выполняющихся при запуске и отключении Uvicorn'''
+'''
+модуль для определения операций выполняющихся при запуске и отключении сервера
+'''
 
 import os
 
@@ -13,6 +15,9 @@ load_dotenv()
 DB_ENGINE: Engine | None = None
 
 def create_db_engine() -> None:
+    '''
+    Создание пула подключений с помощью sqlalchemy engine, который используется в инфраструктуре
+    '''
     global DB_ENGINE
     try:
         DB_ENGINE = create_engine(
@@ -31,6 +36,9 @@ def create_db_engine() -> None:
         print(f'ошибка {e}')
 
 def shutdown_engine():
+    '''
+    Закрытие пула подключений и замена значения переменной на None
+    '''
     global DB_ENGINE
     if DB_ENGINE:
         DB_ENGINE.dispose()

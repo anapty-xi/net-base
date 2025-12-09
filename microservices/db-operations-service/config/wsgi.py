@@ -1,3 +1,6 @@
+'''
+Конфигурирование сервера для создания и закрытия пула подключений при инициализации и закрытии
+'''
 import os
 import django
 from django.core.wsgi import get_wsgi_application

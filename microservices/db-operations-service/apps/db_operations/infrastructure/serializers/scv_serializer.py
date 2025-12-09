@@ -1,7 +1,9 @@
 from django.core.files.uploadedfile import UploadedFile
 
 class CsvHandler:
-    '''класс предосталяющий части таблицы для ее создания'''
+    '''
+    Обработка файла в соответствии с структурой таблицы 
+    '''
     def __init__(self, file: UploadedFile):
         if not file.name.endswith('.csv'):
             raise TypeError

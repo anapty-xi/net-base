@@ -1,6 +1,6 @@
 import pytest
 
-from ...usecases import table_usecases
+from apps.db_operations.usecases import table_usecases
 from unittest.mock import patch, Mock
 
 

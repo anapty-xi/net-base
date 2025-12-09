@@ -9,8 +9,13 @@ from typing import List, Dict
 metadata_obj = MetaData()
 
 class RepositoryManager(TableGateway):
-    def __init__(self):
-        self.engine: Engine = DB_ENGINE
+    '''
+    Шлюз к бд на sqlalchemy. Отвечает протоколу TableGateway
+    '''
+    def __init__(self, engine=None):
+        if engine:
+            self.engine = engine
+        else: self.engine: Engine = DB_ENGINE
 
     def _get_table_obj(self, title: str) -> Table:
         try:  
@@ -19,6 +24,9 @@ class RepositoryManager(TableGateway):
             raise Exception(f'Таблицы {title} не существует')
 
     def create_table(self, table: EntityTable) -> bool:
+        '''
+        Создвние таблицы и заполнение ее данными
+        '''
         columns = [Column(col, String, nullable=True) for col in table.cols]
         columns.insert(0, Column('id', Integer, primary_key=True, autoincrement=True))
         user_table = Table(
@@ -37,6 +45,9 @@ class RepositoryManager(TableGateway):
         return True #TODO возвращять значание взависимости от создания таблицы
 
     def get_table_info(self, title: str) -> Dict[str, List[str]]:
+        '''
+        Получение схемы всех таблиц или конкретной таблицы 
+        '''
         if title:
             table = self._get_table_obj(title)
             table_schema = {table.name: [col.name for col in table.columns]}
@@ -46,6 +57,9 @@ class RepositoryManager(TableGateway):
         return table_schema
     
     def update_row(self, title: str, row_id: str, updates: Dict[str, str]) -> bool:
+        '''
+        Обновление значений определенной строки в таблице 
+        '''
         table = self._get_table_obj(title)
         table_cols = [col.name for col in table.columns]
         for col in updates:
@@ -57,6 +71,9 @@ class RepositoryManager(TableGateway):
         return True
     
     def delete_table(self, title: str) -> bool:
+        '''
+        Удаление таблицы
+        '''
         table = self._get_table_obj(title)
         table.drop(self.engine)
         if title in metadata_obj.tables:
@@ -64,6 +81,9 @@ class RepositoryManager(TableGateway):
         return True
 
     def get_rows(self, title: str, query_params: Dict[str, str]) -> List[List[str]]:
+        '''
+        Получения всех строк удвлотворяющих параментрам поиска
+        '''
         table = self._get_table_obj(title)
         table_cols = [col.name for col in table.columns]
         for col in query_params:

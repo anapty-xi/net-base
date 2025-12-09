@@ -4,11 +4,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
-from .infrasructure.serializers.drf_serializers.serializers import SerializerQueryConditions, SerializerColUpdate
-from .infrasructure.serializers.scv_serializer import CsvHandler
+from .infrastructure.serializers.drf_serializers.serializers import SerializerQueryConditions, SerializerColUpdate
+from .infrastructure.serializers.scv_serializer import CsvHandler
 from .permissions import IsAdminCustom,IsAuthenticatedCustom
 from .usecases import table_usecases
-from .infrasructure.repository_manager import RepositoryManager
+from .infrastructure.repository_manager import RepositoryManager
 from rest_framework.permissions import AllowAny
 
 logger = logging.getLogger(__name__)
