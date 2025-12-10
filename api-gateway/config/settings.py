@@ -1,13 +1,14 @@
 
 
 from pathlib import Path
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-
-SECRET_KEY = 'django-insecure-&lbpqi0)-4&u58noeu2b&(ysq7wp(zt6y0o9@o6681+7dar8!!'
+SECRET_KEY = str(os.getenv('SECRET_KEY'))
 
 
 DEBUG = True
@@ -99,7 +100,7 @@ LOGGING = {
     },
 }
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:5173']
+CORS_ALLOWED_ORIGINS = [str(os.getenv('FRONTEND_URL'))]
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -122,6 +123,6 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MICROSERVICES = {
-    'db-operations-service': 'http://localhost:8002',
-    'user-service': 'http://localhost:8001',
+    'db-operations-service': str(os.getenv('DB_OPERATIONS_SERVICE_URL')),
+    'user-service': str(os.getenv('USER_SERVICE_URL')),
 }

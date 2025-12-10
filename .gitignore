@@ -3,3 +3,5 @@ microservices/db-operations-service/db-ops-venv
 microservices/db-operations-service/.env
 
 __pycache__/
+
+api-gateway/gate-venv
