@@ -27,22 +27,27 @@ class RepositoryManager(TableGateway):
         '''
         Создвние таблицы и заполнение ее данными
         '''
-        columns = [Column(col, String, nullable=True) for col in table.cols]
-        columns.insert(0, Column('id', Integer, primary_key=True, autoincrement=True))
-        user_table = Table(
-            table.title,
-            metadata_obj,
-            *columns
-        )
-        metadata_obj.create_all(self.engine)
+        try:
+            columns = [Column(col, String, nullable=True) for col in table.cols]
+            columns.insert(0, Column('id', Integer, primary_key=True, autoincrement=True))
+            user_table = Table(
+                table.title,
+                metadata_obj,
+                *columns
+            )
+            metadata_obj.create_all(self.engine)
 
-        data = [
-            {col: row[i] for i, col in enumerate(table.cols)}
-            for row in table.rows
-        ]
-        with self.engine.begin() as connection:
-            connection.execute(insert(user_table), data)
-        return True #TODO возвращять значание взависимости от создания таблицы
+            data = [
+                {col: row[i] for i, col in enumerate(table.cols)}
+                for row in table.rows
+            ]
+            with self.engine.begin() as connection:
+                connection.execute(insert(user_table), data)
+            return True
+        except:
+            return False
+
+
 
     def get_table_info(self, title: str) -> Dict[str, List[str]]:
         '''
@@ -67,8 +72,11 @@ class RepositoryManager(TableGateway):
                 raise ValueError(f'Столбец {col} не является столбцом таблицы {title}')
         stmt = update(table).where(table.c.id == int(row_id)).values(**updates)
         with self.engine.begin() as connection:
-            connection.execute(stmt)
-        return True
+            try:
+                connection.execute(stmt)
+                return True
+            except:
+                return False
     
     def delete_table(self, title: str) -> bool:
         '''

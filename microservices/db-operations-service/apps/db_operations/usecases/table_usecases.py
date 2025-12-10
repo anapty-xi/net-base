@@ -1,7 +1,7 @@
 from ..entities.table import Table
 from typing import Optional, List, Dict
 from .table_gateway_protocol import TableGateway
-from .table_validator import TableValidator
+from .table_validator import TableValidator, UpdatesValidator
 
 
 class UseCase:
@@ -22,12 +22,15 @@ class CreateTable(UseCase):
     
 class TableInfo(UseCase):
     def execute(self, title=None):
-        tables_data = self.infrastructure_class.get_table_info(title)#TODO придумать правильную форму
+        tables_data = self.infrastructure_class.get_table_info(title)
         return tables_data
     
 class UpdateTable(UseCase):
     def execute(self, title: str, row_id: str, updates: Dict[str, str]):
-        return self.infrastructure_class.update_row(title, row_id, updates)
+        table_schema = self.infrastructure_class.get_table_info(title)
+        validator = UpdatesValidator()
+        validated_updates = validator.cheked_field_validation(table_schema, **updates)
+        return self.infrastructure_class.update_row(title, row_id, validated_updates)
     
 class DeleteTable(UseCase):
     def execute(self, title: str):

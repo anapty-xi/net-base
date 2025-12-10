@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 import requests
+from django.conf import settings
 
 class JWTAuthenticationMiddleware:
     '''
@@ -17,7 +18,7 @@ class JWTAuthenticationMiddleware:
             token = auth_header.split(' ')[1]
 
             try:
-                user_data = requests.get('http://localhost:8001/user/user',
+                user_data = requests.get(f'{settings.USER_SERVICE_URL}/user/user/',
                                           headers={'Authorization': f'Bearer {token}'}, 
                                           timeout=5)
                 request.user_data = user_data

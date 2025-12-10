@@ -4,7 +4,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
-from .infrastructure.serializers.drf_serializers.serializers import SerializerQueryConditions, SerializerColUpdate
 from .infrastructure.serializers.scv_serializer import CsvHandler
 from .permissions import IsAdminCustom,IsAuthenticatedCustom
 from .usecases import table_usecases
@@ -35,10 +34,12 @@ def create_table(request):
     infrastructure = RepositoryManager()
     usecase = table_usecases.CreateTable(infrastructure)
     if not usecase.execute(file.table_title, file.cols, file.rows, analytics):
+        logger.error(f'error ocured while {file.table_title} creating')
         return Response(
             {'error', 'Ошибка создании таблицы'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    logger.info(f'table {file.table_title} created')
     return Response(
         status=status.HTTP_201_CREATED
     )
@@ -50,14 +51,16 @@ def get_all_tabels(request):
 
     infrastucture = RepositoryManager()
     usecase = table_usecases.TableInfo(infrastucture)
-    result = usecase.execute()
-    if not result:
+    tables_info = usecase.execute()
+    if not tables_info:
+        logger.error('data base cannt get all table schemas')
         return Response(
             {'error': 'ошибка запроса к бд'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    logger.info(f'client got schemas:\n{tables_info}')
     return Response(
-        result,
+        tables_info,
         status=status.HTTP_200_OK
     )
 
@@ -70,10 +73,12 @@ def get_table(request, table):
     usecase = table_usecases.TableInfo(infrastucture)
     table_info = usecase.execute(table)
     if not table_info:
+        logger.error(f'table {table} doesn`t exists')
         return Response(
             {'error': 'таблицы не существует'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    logger.info(f'client got {table} schema:\n{table_info}')
     return Response(
         table_info,
         status=status.HTTP_200_OK
@@ -87,6 +92,7 @@ def delete_table(request, table):
     infrastucture = RepositoryManager()
     usecase = table_usecases.DeleteTable(infrastucture)
     if not usecase.execute(table):
+        logger.error(f'table {table} doesn`t exists')
         return Response(
             {'error': 'Таблицы не существует'},
             status=status.HTTP_400_BAD_REQUEST
@@ -107,10 +113,12 @@ def get_rows(request, table):
     usecase = table_usecases.GetRows(infrastucture)
     rows = usecase.execute(table, data)
     if rows:
+        logger.info(f'client got rows:\n{rows}')
         return Response(
             rows,
             status=status.HTTP_200_OK
         )
+    logger.error(f'while get_rows error occured, input data:\ntable: {table}\nquery_params: {data}')
     return Response(
         {'errors': 'данные не верны'},
         status=status.HTTP_400_BAD_REQUEST
@@ -128,10 +136,12 @@ def update_row(request, table):
     usecase = table_usecases.UpdateTable(infrastucture)
     if usecase.execute(table, pk, updates):
         logger.info(f'Updated table {table}, pk={pk}, data={updates}')
+        logger.info(f'successfuly updated row {pk}\nupdates: {updates}')
         return Response(
             {table: 'обновление успешно'},
             status=status.HTTP_200_OK
         )
+    logger.error(f'while update_row error occured\ntable: {table}\npk: {pk}\nupdates: {updates}')
     return Response(
         {'errors', 'данные не верны'},
         status=status.HTTP_400_BAD_REQUEST
