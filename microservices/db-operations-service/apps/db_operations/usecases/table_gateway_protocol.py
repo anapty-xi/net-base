@@ -1,0 +1,16 @@
+from typing import Optional, Protocol, List, Dict
+from ..entities.table import Table
+
+
+class TableGateway(Protocol):
+    def create_table(self, table: Table) -> bool:
+        ...
+    def get_table_info(self, title: str) -> Dict[str, List[str]]:
+        ...
+    def update_row(self, title: str, row_id: str, updates: Dict[str, str]) -> bool:
+        ...
+    def delete_table(self, title: str) -> None:
+        ...
+    def get_rows(self, title: str, query_params: Dict[str, str]) -> List[List[str]]:
+        ...
+    

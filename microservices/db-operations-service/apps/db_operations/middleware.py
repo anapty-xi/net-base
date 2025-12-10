@@ -1,7 +1,11 @@
-from .services import get_user_from_token
 from django.http import JsonResponse
+import requests
+from django.conf import settings
 
 class JWTAuthenticationMiddleware:
+    '''
+    Middleware для проверки токена пользователя. Встраивает в request данные пользователя для views
+    '''
     def __init__(self, get_response):
         self.get_response = get_response
 
@@ -13,10 +17,12 @@ class JWTAuthenticationMiddleware:
         if auth_header and auth_header.startswith('Bearer '):
             token = auth_header.split(' ')[1]
 
-            user_data = get_user_from_token(token)
-            if user_data:
+            try:
+                user_data = requests.get(f'{settings.USER_SERVICE_URL}/user/user/',
+                                          headers={'Authorization': f'Bearer {token}'}, 
+                                          timeout=5)
                 request.user_data = user_data
-            else:
+            except:
                 return JsonResponse({'error': 'Invalid token'}, status=401)
         else:
             return JsonResponse({'error': 'Authentication required'}, status = 401)

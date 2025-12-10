@@ -1,4 +1,7 @@
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -107,7 +110,7 @@ LOGGING = {
     },
 }
 
-CORS_ALLOWED_ORIGINS = ['http://localhost:8000']
+CORS_ALLOWED_ORIGINS = [str(os.getenv('GATEWAY_URL'))]
 
 
 LANGUAGE_CODE = 'en-us'
@@ -125,6 +128,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DB_POOL = None
 
-CELERY_BROKER_URL = 'amqp://guest:guest@localhost:5672/'
+CELERY_BROKER_URL = str(os.getenv('CELERY_BROKER_URL'))
 
-USER_SERVICE_URL = 'http://localhost:8001'
+USER_SERVICE_URL = str(os.getenv('USER_SERVICE_URL'))
