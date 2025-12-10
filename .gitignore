@@ -5,3 +5,8 @@ microservices/db-operations-service/.env
 __pycache__/
 
 api-gateway/gate-venv
+api-gateway/.env
+
+
+microservices/analytics-service/anal-venv
+microservices/analytics-service/.env
