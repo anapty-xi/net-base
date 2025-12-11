@@ -1,12 +1,13 @@
-microservices/user-service/.env
-microservices/db-operations-service/db-ops-venv
-microservices/db-operations-service/.env
-
 __pycache__/
 
 api-gateway/gate-venv
 api-gateway/.env
 
+microservices/user-service/user-venv
+microservices/user-service/.env
+
+microservices/db-operations-service/db-ops-venv
+microservices/db-operations-service/.env
 
 microservices/analytics-service/anal-venv
 microservices/analytics-service/.env

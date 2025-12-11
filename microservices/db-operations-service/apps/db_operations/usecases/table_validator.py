@@ -75,7 +75,7 @@ class TableValidator:
         return table
         
 
-class UpdatesValidator():
+class UpdatesValidator(): #TODO: в таблицу модет не быть этих столбцов
     '''
     Валидирует словарь для обновления таблицы. Если обновляется столбец "Проверено", то проверяет значение обновления и изменяет дату
     '''

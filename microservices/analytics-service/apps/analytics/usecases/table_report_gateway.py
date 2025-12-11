@@ -1,17 +1,21 @@
 from typing import Protocol
-
+from typing import Self, List, Dict
 class TableReportProtocol(Protocol):
-    def get_rows_number(self, table_title: str) -> int:
+    def __init__(self, table_title: str, table_cols: List[str]) -> Self:
         ...
-    def get_cheked_number(self, table_title: str) -> int:
+    def get_rows_number(self) -> int:
         ...
-    def get_success_number(self, table_title: str) -> int:
+    def get_cheked_number(self) -> int:
         ...
-    def get_remarks_number(self, table_title: str) -> int:
+    def get_success_number(self) -> int:
         ...
-    def get_elem_remarks_td_number(self, table_title: str) -> int:
+    def get_remarks_number(self) -> int:
         ...
-    def get_remarks_td_number(self, table_title: str) -> int:
+    def get_elem_remarks_td_number(self) -> int:
         ...
-    def get_cheked_td_number(self, table_title: str) -> int:
+    def get_remarks_td_number(self) -> int:
+        ...
+    def get_cheked_td_number(self) -> int:
+        ...
+    def get_tables_in_analytics() -> Dict[str, List[str]]:
         ...
