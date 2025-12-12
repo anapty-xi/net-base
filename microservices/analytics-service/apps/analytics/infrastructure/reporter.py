@@ -23,7 +23,7 @@ class Reporter(TableReportProtocol):
     def _get_success_number(self, table_rows) -> int:
         counter = 0
         for row in table_rows:
-            if row[self.checked_index] == '+':
+            if row[self.checked_index] in ['+', 'у']:
                 counter += 1
         return counter
     
@@ -82,7 +82,7 @@ class Reporter(TableReportProtocol):
         '''
         all_schemas: Dict[str, List[str]] = requests.get(f'{settings.DB_OPERATIONS_SERVICE}/db/get_table_info/').data
         analytics_tables = {}
-        for table_title, cols in all_schemas.values():
+        for table_title, cols in all_schemas.items():
             lower_cols = list(map(lambda col: col.lower(), cols))
             if 'проверено' in lower_cols and 'дата' in lower_cols:
                 analytics_tables[table_title] = cols

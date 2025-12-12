@@ -12,7 +12,7 @@ class MakeReport:
     def execute(self) -> List[TableReport]:
         tabels_to_report = self.reporter.get_analytics_schemes()
         report = []
-        for table_title, cols in tabels_to_report.values():
+        for table_title, cols in tabels_to_report.items():
             table_rows = self.reporter.get_table_rows(table_title)
             report.append(self.reporter.get_table_report(table_title, 
                                                          cols,
