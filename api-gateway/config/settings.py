@@ -125,4 +125,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 MICROSERVICES = {
     'db-operations-service': str(os.getenv('DB_OPERATIONS_SERVICE_URL')),
     'user-service': str(os.getenv('USER_SERVICE_URL')),
+    'analytics-service': str(os.getenv('ANALYTICS_SERVICE_URL'))
 }

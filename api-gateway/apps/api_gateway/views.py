@@ -31,6 +31,8 @@ class ProxyView(View):
             return 'user-service'
         elif path.startswith('/db/'):
             return 'db-operations-service'
+        elif path.startswith('/analytics/'):
+            return 'analytics-service'
         return None
 
 

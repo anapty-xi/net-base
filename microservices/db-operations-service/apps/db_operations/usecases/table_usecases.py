@@ -11,10 +11,10 @@ class UseCase:
 class CreateTable(UseCase):
     def execute(self, title: str, cols: List[str], rows: List[List[str]], in_analytics: bool):
         table = Table(
-            title,
-            cols,
-            rows,
-            in_analytics
+            title=title,
+            cols=cols,
+            rows=rows,
+            in_analytics=in_analytics
         )
         validator = TableValidator()
         validated_table = validator.validate_table(table)
@@ -29,7 +29,7 @@ class UpdateTable(UseCase):
     def execute(self, title: str, row_id: str, updates: Dict[str, str]):
         table_schema = self.infrastructure_class.get_table_info(title)
         validator = UpdatesValidator()
-        validated_updates = validator.cheked_field_validation(table_schema, **updates)
+        validated_updates = validator.cheked_field_validation(table_schema[title], **updates)
         return self.infrastructure_class.update_row(title, row_id, validated_updates)
     
 class DeleteTable(UseCase):

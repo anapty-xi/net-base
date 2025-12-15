@@ -197,7 +197,7 @@ const submitData = async () => {
     }, {});
     
     try {
-        const response = await axios.post(SEARCH_URL, {'conditions': queryPayload});
+        const response = await axios.get(SEARCH_URL, {'conditions': queryPayload});
         
         const structuredRows = response.data.rows || response.data; 
         
@@ -273,7 +273,7 @@ isGlobalUpdating.value = true;
                 updates: updates
             };
 
-            const promise = axios.post(UPDATE_URL, singleUpdatePayload);
+            const promise = axios.patch(UPDATE_URL, singleUpdatePayload);
             
             updatePromises.push(promise);
             modifiedRows.push(row);

@@ -12,4 +12,5 @@ class IsAdminCustom(BasePermission):
     Проверка админ ли пользователь на основе атрибута вставленного middleware
     '''
     def has_permission(self, request, view):
-        return hasattr(request, 'user_data') and request.user_data['is_staff'] == True
+        if hasattr(request, 'user_data'):
+            return request.user_data['is_staff'] == True

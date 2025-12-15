@@ -21,11 +21,12 @@ class JWTAuthenticationMiddleware:
                 user_data = requests.get(f'{settings.USER_SERVICE_URL}/user/user/',
                                           headers={'Authorization': f'Bearer {token}'}, 
                                           timeout=5)
-                request.user_data = user_data
+                request.user_data = user_data.json()
             except:
                 return JsonResponse({'error': 'Invalid token'}, status=401)
         else:
             return JsonResponse({'error': 'Authentication required'}, status = 401)
 
         response = self.get_response(request)
+        response.headers['Authorization'] = (f'Bearer {token}')
         return response            

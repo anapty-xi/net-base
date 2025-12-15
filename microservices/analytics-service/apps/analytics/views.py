@@ -1,4 +1,5 @@
 import json
+import logging
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -7,14 +8,18 @@ from .infrastructure.reporter import Reporter
 from rest_framework import status
 from .permissions import IsAuthenticated
 
-@api_view(['GET'])
+logger = logging.getLogger(__name__)
+
+
+@api_view(['GET'])     #TODO отделить токен от нижнихуровней
 @permission_classes([IsAuthenticated])
 def get_report(request):
     '''
     Точка только для аутентифицированнных пользователей для получения отчета о таблицах
     '''
+    token = request.headers.get('Authorization').split(' ')[1]
     reporter = Reporter()
-    usecase = MakeReport(reporter)
+    usecase = MakeReport(reporter, token)
     try:
         report = usecase.execute()
     except Exception as e:
@@ -22,8 +27,9 @@ def get_report(request):
             {'error': e},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    logger.info(f'reports {report}')
     return Response(
-        [json.loads(table_report) for table_report in report],
+        [json.loads(table_report.json()) for table_report in report],
         status=status.HTTP_200_OK
     )
 

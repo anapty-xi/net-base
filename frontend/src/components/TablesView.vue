@@ -43,6 +43,14 @@
           ref="fileInput"
           class="file-input"
         />
+        <div class="analytics-checkbox">
+          <input
+            type="checkbox"
+            id="inAnalytics"
+            v-model="inAnalytics"
+          />
+          <label for="inAnalytics">Добавить в аналитику</label>
+        </div>
         <div v-if="uploadError" class="state-message error">
           Ошибка: {{ uploadError }}
         </div>
@@ -79,7 +87,7 @@ const DB_CREATE_URL = 'http://localhost:8000/db/create/'
 const DB_DELETE_BASE_URL = 'http://localhost:8000/db/delete/';
 
 
-// Данные компонента
+
 const tables = ref([]);
 const isStaff = ref(false);
 const selectedTables = ref([]);
@@ -88,13 +96,14 @@ const error = ref(null);
 const isDeleting = ref(false);
 const deleteError = ref(null);
 
-// Новые переменные для загрузки CSV
+
 const showUploadForm = ref(false);
 const uploadFile = ref(null);
 const uploading = ref(false);
 const uploadError = ref(null);
+const inAnalytics = ref(false);
 
-// Получение данных о таблицах и пользователе
+
 const fetchData = async () => {
   loading.value = true;
   error.value = null;
@@ -104,7 +113,7 @@ const fetchData = async () => {
     isStaff.value = userResponse.data.is_staff;
 
     const dbResponse = await axios.get(DB_INFO_URL);
-    tables.value = Object.keys(dbResponse.data.tabels);
+    tables.value = Object.keys(dbResponse.data);
   } catch (err) {
     console.error("Не удалось выполнить запрос:", err);
     const endpoint = err.config?.url.includes('/user') ? 'User-сервиса' : 'DB-сервиса';
@@ -169,6 +178,7 @@ const uploadCSV = async () => {
 
   const formData = new FormData();
   formData.append('file', uploadFile.value);
+  formData.append('in_analytics', inAnalytics.value); 
 
   uploading.value = true;
   uploadError.value = null;
@@ -365,5 +375,16 @@ h3 {
   background-color: #f8d7da;
   color: #721c24;
   cursor: not-allowed;
+}
+
+.analytics-checkbox {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+  font-size: 0.95em;
+}
+
+.analytics-checkbox input {
+  margin-right: 8px;
 }
 </style>

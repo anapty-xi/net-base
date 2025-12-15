@@ -1,10 +1,13 @@
 import requests
+import logging
 
 from ..usecases.table_report_gateway import TableReportProtocol
 from django.conf import settings
 from typing import Dict, List
 from datetime import datetime
 from ..entities.table_report import TableReport 
+
+logger = logging.getLogger(__name__)
 
 class Reporter(TableReportProtocol):
     '''
@@ -76,11 +79,12 @@ class Reporter(TableReportProtocol):
         )
         return table_report
     
-    def get_analytics_schemes(self) -> Dict[str, List[str]]:
+    def get_analytics_schemes(self, token) -> Dict[str, List[str]]:
         '''
         Делает запрос к сервису бд для получения всех схем таблиц. Отбирает и возвращает только схемы таблиц соответсвующих требованиям аналитики
         '''
-        all_schemas: Dict[str, List[str]] = requests.get(f'{settings.DB_OPERATIONS_SERVICE}/db/get_table_info/').data
+        all_schemas: Dict[str, List[str]] = requests.get(f'{settings.DB_OPERATIONS_SERVICE_URL}/db/get_table_info/', headers={'Authorization': f'Bearer {token}'}).json()
+        logger.info(f'response {all_schemas}')
         analytics_tables = {}
         for table_title, cols in all_schemas.items():
             lower_cols = list(map(lambda col: col.lower(), cols))
@@ -88,11 +92,11 @@ class Reporter(TableReportProtocol):
                 analytics_tables[table_title] = cols
         return analytics_tables
     
-    def get_table_rows(self, table_title: str) -> List[List[str]]:
+    def get_table_rows(self, table_title: str, token) -> List[List[str]]:
         '''
         Делает запрос к бд для получения всех строк таблицы
         '''
-        return requests.get(f'{settings.DB_OPERATIONS_SERVICE}/db/get_rows/{table_title}/').data
+        return requests.get(f'{settings.DB_OPERATIONS_SERVICE_URL}/db/get_rows/{table_title}/', headers={'Authorization': f'Bearer {token}'}).json()
                               
 
         

@@ -24,15 +24,16 @@ def create_table(request):
             status=status.HTTP_400_BAD_REQUEST
         )
     try:
-        file = CsvHandler(request.data['file'])
+        file = CsvHandler(request.data.get('file'))
     except TypeError:
         return Response(
             {'error': 'файл должен быть csv'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    analytics = request.data.get('analytics')
+    analytics = request.data.get('in_analytics')
     infrastructure = RepositoryManager()
     usecase = table_usecases.CreateTable(infrastructure)
+    logger.info(f'got file\n title={file.table_title}\ncols={file.cols}\nrows={file.rows}\nanal={analytics}')
     if not usecase.execute(file.table_title, file.cols, file.rows, analytics):
         logger.error(f'error ocured while {file.table_title} creating')
         return Response(
@@ -134,15 +135,17 @@ def update_row(request, table):
 
     infrastucture = RepositoryManager()
     usecase = table_usecases.UpdateTable(infrastucture)
-    if usecase.execute(table, pk, updates):
+    try:
+        usecase.execute(table, pk, updates)
         logger.info(f'Updated table {table}, pk={pk}, data={updates}')
         logger.info(f'successfuly updated row {pk}\nupdates: {updates}')
         return Response(
             {table: 'обновление успешно'},
             status=status.HTTP_200_OK
         )
-    logger.error(f'while update_row error occured\ntable: {table}\npk: {pk}\nupdates: {updates}')
-    return Response(
-        {'errors', 'данные не верны'},
-        status=status.HTTP_400_BAD_REQUEST
-    )
+    except ValueError as e:
+        logger.error(f'while update_row error occured\ntable: {table}\npk: {pk}\nupdates: {updates}\n{e}')
+        return Response(
+            {'errors', 'данные не верны'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
