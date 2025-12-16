@@ -5,19 +5,19 @@ def validate_title(title: str) -> str:
     if ' ' in title:
         title = '_'.join(title.split())
 
-    if len(title) > 64:
-        raise ValueError(f'длина названия таблицы {len(title)} символа. максимально 64')
+    if len(title) > 128:
+        raise ValueError(f'длина названия таблицы {len(title)} символа. максимально 128')
     return title
 
 def validate_cols(cols: List[str]) -> List[str]:
-    if len(cols) > 32:
-        raise ValueError(f'максимальное количество столбцов 32')
+    if len(cols) > 64:
+        raise ValueError(f'максимальное количество столбцов 64')
     for index, col in enumerate(cols):
         if ' ' in col:
             col = '_'.join(col.split())
             cols[index] = col
-        if len(col) > 64:
-            raise ValueError(f'длина названия столбца {len(col)} символа. максимально 64')
+        if len(col) > 128:
+            raise ValueError(f'длина названия столбца {len(col)} символа. максимально 128')
     return cols
         
 

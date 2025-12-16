@@ -29,18 +29,18 @@
       </li>
     </ul>
 
-    <div class="action-buttons">
-      <router-link to="/report" class="report-button">
+    <!-- Кнопки: Отчёт и Создать таблицу — на одном уровне -->
+    <div v-if="isStaff" class="action-row">
+      <router-link to="/report" class="report-button small-button">
         Отчёт
       </router-link>
+      <button @click="showUploadForm = !showUploadForm" class="create-button small-button">
+        {{ showUploadForm ? 'Отмена' : 'Создать таблицу' }}
+      </button>
     </div>
 
-    <!-- Кнопка и форма для создания таблицы из CSV (только для isStaff) -->
+    <!-- Форма создания таблицы -->
     <div v-if="isStaff" class="create-actions">
-      <button @click="showUploadForm = !showUploadForm" class="create-button">
-        {{ showUploadForm ? 'Отмена' : 'Создать таблицу из CSV' }}
-      </button>
-
       <div v-if="showUploadForm" class="upload-form">
         <input
           type="file"
@@ -70,6 +70,7 @@
         </div>
       </div>
     </div>
+
 
     <!-- Блок удаления выбранных таблиц -->
     <div v-if="isStaff && selectedTables.length > 0" class="delete-actions">
@@ -214,48 +215,120 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.db-table-view {
-  padding: 20px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.db-table-view,
+.table-schema-editor {
+  padding: 30px;
+  background-color: var(--bg-page);
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   max-width: 1000px;
-  margin: 40px auto;
-  font-family: 'Arial', sans-serif;
+  margin: 20px auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-h3 {
-  color: #333;
-  border-bottom: 2px solid #ccc;
-  padding-bottom: 10px;
+h1, h3 {
+  color: var(--text-primary);
+  font-weight: 600;
   margin-bottom: 20px;
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 8px;
 }
 
-/* Сообщения о состоянии */
+/* Сообщения */
 .state-message {
-  padding: 10px;
-  border-radius: 5px;
-  margin-bottom: 10px;
-  font-size: 0.9em;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  text-align: center;
+  margin: 16px 0;
+  font-weight: 500;
 }
 
 .loading {
-  background-color: #e9ecef;
-  color: #6c757d;
-  text-align: center;
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  border: 1px solid rgba(28, 124, 84, 0.3);
 }
 
 .error {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: #ffebee;
+  color: var(--error);
   border: 1px solid #f5c6cb;
 }
 
-.delete-error {
-  margin-left: 15px;
+.info {
+  background-color: #f0f8ff;
+  color: var(--info);
+  border: 1px solid #c4e2ff;
 }
 
-/* Список таблиц */
+/* Кнопки */
+.create-button,
+.report-button,
+.submit-button,
+.global-update-button,
+.delete-button,
+.upload-button,
+.cancel-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.create-button,
+.report-button {
+  flex: 1;
+  min-width: 160px;
+  text-decoration: none;
+  text-align: center;
+  color: white;
+}
+
+.create-button {
+  background-color: var(--primary);
+}
+
+.create-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.report-button {
+  background-color: #17a2b8;
+}
+
+.report-button:hover {
+  background-color: #138496;
+}
+
+.submit-button,
+.global-update-button {
+  background-color: var(--primary);
+  color: white;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.submit-button:hover:not(:disabled),
+.global-update-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.delete-button {
+  background-color: var(--error);
+  color: white;
+  padding: 10px 20px;
+  font-weight: 600;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #c62828;
+}
+
+/* Списки таблиц */
 .table-list {
   list-style: none;
   padding: 0;
@@ -265,84 +338,69 @@ h3 {
 .table-item {
   display: flex;
   align-items: center;
-  padding: 8px;
-  border-bottom: 1px solid #eee;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.1s;
+}
+
+.table-item:hover {
+  background-color: var(--bg-table);
 }
 
 .delete-checkbox {
-  margin-right: 10px;
-  transform: scale(1.2);
+  margin-right: 12px;
+  transform: scale(1.3);
   cursor: pointer;
 }
 
 .table-link {
   text-decoration: none;
-  color: #007bff;
-  font-size: 1.1em;
+  color: var(--primary);
+  font-size: 1.05em;
   flex-grow: 1;
-  padding: 8px;
-  transition: color 0.2s;
+  padding: 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 
 .table-link:hover {
-  color: #0056b3;
-  background-color: #f8f9fa;
-  border-radius: 4px;
+  color: var(--primary-dark);
+  background-color: var(--primary-light);
 }
 
-/* Кнопка создания таблицы */
-.create-button {
-  margin-top: 20px;
-  padding: 10px 15px;
-  background-color: #28a745;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1em;
-  transition: background-color 0.2s;
+/* Формы */
+.action-buttons {
+  display: flex;
+  gap: 14px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.create-button:hover:not(:disabled) {
-  background-color: #218838;
-}
-
-/* Форма загрузки CSV */
 .upload-form {
-  margin-top: 15px;
-  padding: 15px;
-  border: 1px dashed #007bff;
-  border-radius: 6px;
-  background-color: #f9f9f9;
+  margin-top: 20px;
+  padding: 20px;
+  border: 2px dashed var(--primary);
+  border-radius: 8px;
+  background-color: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .file-input {
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 .upload-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.upload-button,
-.cancel-button {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.95em;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
 }
 
 .upload-button {
-  background-color: #007bff;
+  background-color: var(--primary);
   color: white;
-}
-
-.upload-button:hover:not(:disabled) {
-  background-color: #0056b3;
 }
 
 .cancel-button {
@@ -354,58 +412,78 @@ h3 {
   background-color: #545b62;
 }
 
-/* Кнопка удаления */
-.delete-actions {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
+/* Таблицы */
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--bg-card);
+  margin-top: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.delete-button {
-  padding: 10px 15px;
-  background-color: #dc3545;
+.results-table th {
+  background-color: var(--primary);
+  color: white;
+  font-weight: 600;
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.results-table td {
+  padding: 8px 10px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+
+.results-table tr:nth-child(even) {
+  background-color: var(--bg-table);
+}
+
+.results-table input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.results-table input:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(28, 124, 84, 0.1);
+}
+
+.modern-button {
+  background-color: var(--primary);
   color: white;
   border: none;
-  border-radius: 5px;
+  padding: 10px 16px;
+  border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.2s;
 }
 
-.delete-button:hover:not(:disabled) {
-  background-color: #c82333;
-}
-
-.delete-button:disabled {
-  background-color: #f8d7da;
-  color: #721c24;
-  cursor: not-allowed;
-}
-
-.analytics-checkbox {
+.action-row {
   display: flex;
-  align-items: center;
-  margin: 10px 0;
-  font-size: 0.95em;
+  gap: 16px;
+  margin: 20px 0;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
-.analytics-checkbox input {
-  margin-right: 8px;
-}
-
-.report-button,
-.create-button {
-  padding: 10px 15px;
+.small-button {
+  padding: 10px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 1em;
-  text-decoration: none;
   text-align: center;
+  text-decoration: none;
   transition: background-color 0.2s;
   flex: 1;
-  min-width: 160px;
+  min-width: 130px;
+  max-width: 180px;
 }
 
 .report-button {
@@ -415,5 +493,77 @@ h3 {
 
 .report-button:hover {
   background-color: #138496;
+}
+
+.create-button {
+  background-color: var(--primary);
+  color: white;
+}
+
+.create-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+/* Форма создания таблицы */
+.create-actions {
+  margin-top: 10px;
+}
+
+.upload-form {
+  padding: 18px;
+  border: 2px dashed var(--primary);
+  border-radius: 8px;
+  background-color: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.upload-button {
+  background-color: var(--primary);
+  color: white;
+  padding: 10px 16px;
+}
+
+.cancel-button {
+  background-color: #6c757d;
+  color: white;
+  padding: 10px 16px;
+}
+
+.cancel-button:hover {
+  background-color: #545b62;
+}
+
+/* Удаление таблиц */
+.delete-actions {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border); /* Визуальный разрыв */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.delete-button {
+  align-self: center;
+  background-color: var(--error);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  min-width: 200px;
+  font-size: 0.95em;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #c62828;
 }
 </style>

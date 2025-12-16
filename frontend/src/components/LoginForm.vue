@@ -56,9 +56,7 @@ const loginUser = async () => {
 
       localStorage.setItem('accessToken', access);
       localStorage.setItem('refreshToken', refresh);
-      
 
-      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
       
       console.log('Успешный вход. Токен доступа сохранен:', access);
       router.push({path: '/homepage'});
@@ -87,42 +85,73 @@ const loginUser = async () => {
 
 <style scoped>
 .login-form {
-  width: 20rem;
+  width: 22rem;
   margin: 50px auto;
-  padding: 20px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  padding: 30px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background-color: var(--bg-card);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
 
-}
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
+
 label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95em;
 }
-input[type="text"], input[type="password"] {
+
+input[type="text"],
+input[type="password"] {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   box-sizing: border-box;
+  font-size: 1em;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+  transition: border-color 0.2s;
 }
+
+input[type="text"]:focus,
+input[type="password"]:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(28, 124, 84, 0.1);
+}
+
 button {
   width: 100%;
-  padding: 10px;
-  background-color: #1C7C54;
+  padding: 12px;
+  background-color: var(--primary);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 1.05em;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
+
+button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
 button:disabled {
-  background-color: #a5d6a7;
+  background-color: #94d3a2;
+  cursor: not-allowed;
 }
+
 .error-message {
-  color: red;
-  margin-top: 10px;
+  color: var(--error);
+  margin-top: 12px;
+  font-size: 0.9em;
+  text-align: center;
 }
 </style>

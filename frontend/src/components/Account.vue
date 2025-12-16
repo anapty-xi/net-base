@@ -73,18 +73,19 @@ const logout = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh; 
+  min-height: 100vh;
+  background-color: var(--bg-page);
 }
 
 .profile-card {
-  max-width: 350px;
+  max-width: 380px;
   width: 100%;
-  padding: 30px 20px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 35px 25px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   text-align: center;
-  background-color: white;
+  background-color: var(--bg-card);
 }
 
 .avatar-wrapper {
@@ -92,35 +93,35 @@ const logout = () => {
 }
 
 .profile-avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%; 
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
   object-fit: cover;
-  border: 4px solid #73E2A7;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border: 4px solid var(--primary-light);
+  box-shadow: 0 0 12px rgba(28, 124, 84, 0.15);
 }
 
 .user-username {
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   margin-bottom: 25px;
-  word-wrap: break-word; 
 }
 
 .logout-button {
   width: 100%;
-  padding: 12px;
-  background-color: #f44336;
+  padding: 13px;
+  background-color: var(--error);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.05em;
+  font-weight: 500;
   transition: background-color 0.3s;
 }
 
 .logout-button:hover {
-  background-color: #d32f2f;
+  background-color: #c62828;
 }
 </style>

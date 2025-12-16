@@ -1,3 +1,19 @@
+:root {
+  --primary: #1C7C54;
+  --primary-dark: #1A5D43;
+  --primary-light: #E6F7EE;
+  --text-primary: #2C3E50;
+  --text-secondary: #6C757D;
+  --border: #ddd;
+  --bg-page: #F8F9FA;
+  --bg-card: #ffffff;
+  --bg-table: #F1F3F5;
+  --error: #d32f2f;
+  --warning: #fb8c00;
+  --success: #28a745;
+  --info: #1976d2;
+}
+
 
 * {
     margin: 0;

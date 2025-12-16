@@ -104,12 +104,12 @@ def delete_table(request, table):
         status=status.HTTP_200_OK
     )
 
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticatedCustom])
 def get_rows(request, table):
     '''получание колонок по определенным значениям столбцов'''
 
-    data = dict(request.query_params)
+    data = request.data
     infrastucture = RepositoryManager()
     usecase = table_usecases.GetRows(infrastucture)
     rows = usecase.execute(table, data)

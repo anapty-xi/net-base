@@ -14,6 +14,11 @@
 
     <div v-else class="schema-form">
       <form @submit.prevent="submitData" class="data-entry-form">
+        <div class="table-controls">
+          <button type="submit" class="submit-button" :disabled="submitting">
+            {{ submitting ? '...' : 'Поиск' }}
+          </button>
+        </div>
         <div class="data-table-layout">
           <div class="header-row flex-row">
             <div v-for="field in fields" :key="field" class="header-cell">
@@ -37,10 +42,6 @@
             </div>
           </div>
         </div>
-
-        <button type="submit" class="submit-button" :disabled="submitting">
-          {{ submitting ? 'Поиск...' : 'Выполнить поиск' }}
-        </button>
       </form>
       
       <p v-if="fields.length === 0" class="state-message info">
@@ -100,7 +101,7 @@
           </div>
           
           <div v-if="globalUpdateSuccess > 0" class="state-message success update-success">
-            ✅ Успешно обновлено строк: {{ globalUpdateSuccess }}
+            Успешно обновлено строк: {{ globalUpdateSuccess }}
           </div>
         </div>
       </div>
@@ -211,9 +212,8 @@ const submitData = async () => {
     }, {});
     
     try {
-        const response = await axios.get(SEARCH_URL, {
-          params: queryPayload,
-        });
+        const response = await axios.post(SEARCH_URL, queryPayload);
+
         
         const structuredRows = response.data.rows || response.data; 
         
@@ -247,7 +247,7 @@ const submitData = async () => {
         dataResults.value = restructuredRows;
         
     } catch (err) {
-        submitError.value = `Не удалось выполнить поиск. Ошибка: ${err.message}`;
+        submitError.value = `Нет ни одной строки удволетворяющих запросу`;
     } finally {
         submitting.value = false;
     }
@@ -362,7 +362,7 @@ isGlobalUpdating.value = true;
         globalUpdateSuccess.value = successfulUpdates;
         
         if (failedUpdates > 0) {
-            globalUpdateError.value =  `Обновлено ${successfulUpdates} строк. Ошибка при обновлении ${failedUpdates} строк. Проверьте консоль для деталей.`;
+            globalUpdateError.value =  `Обновлено ${successfulUpdates} строк. Ошибка при обновлении ${failedUpdates} строк. Недопустимое значение.`;
         } else {
             hasAnyModifications.value = false;
         }
@@ -383,65 +383,83 @@ onMounted(() => {
 
 
 <style scoped>
+
+:root {
+  --primary: #1C7C54;
+  --primary-dark: #1A5D43;
+  --bg-page: #F8F9FA;
+  --bg-card: #ffffff;
+  --bg-input: #fcfcfc;
+  --border: #ddd;
+  --text-primary: #2C3E50;
+  --text-secondary: #6C757D;
+  --text-muted: #aaa;
+  --error: #d32f2f;
+  --success: #28a745;
+}
+
 .table-schema-editor {
   padding: 30px;
-  background-color: #f7f7f7;
-  border-radius: 10px;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  background-color: var(--bg-page);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   max-width: 100%;
-  margin: 40px auto;
-  font-family: 'Arial', sans-serif;
+  margin: 20px auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-primary);
 }
 
 h1 {
-  color: #333;
-  border-bottom: 3px solid #007bff;
-  padding-bottom: 10px;
-  margin-bottom: 30px;
+  color: var(--text-primary);
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 1.8em;
 }
 
 .table-name-highlight {
-  color: #007bff;
-  font-weight: bold;
+  color: var(--primary);
+  font-weight: 700;
 }
 
-/* 1. Сообщения о состоянии (Loading/Error/Info) */
+/* Общие сообщения */
 .state-message {
-  padding: 15px;
-  border-radius: 4px;
-  font-size: 1.1em;
-  font-weight: bold;
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 0.95em;
   text-align: center;
-  margin: 20px 0;
+  margin: 18px 0;
+  font-weight: 500;
 }
 
-.loading {
-  background-color: #e6f7ff;
-  color: #1890ff;
-  border: 1px solid #91d5ff;
+.state-message.info,
+.state-message.loading {
+  background-color: var(--bg-card);
+  border: 1px dashed var(--text-muted);
+  color: var(--text-secondary);
 }
 
-.error {
-  background-color: #fff2e8;
-  color: #f5222d;
-  border: 1px solid #ffbb96;
+.state-message.error {
+  background-color: #ffebee;
+  color: var(--error);
+  border: 1px solid #f5c6cb;
 }
 
-.info {
-  background-color: #f0f0f0;
-  color: #555;
-  border: 1px solid #ccc;
+/* Форма поиска — теперь как отдельная секция */
+.data-entry-form {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* 2. Стили Формы Фильтрации (Горизонтальный Layout) */
 .data-table-layout {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  overflow: hidden; 
-  background-color: #fff;
-  margin-bottom: 20px;
-  display: flex; 
-  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background-color: var(--bg-input);
 }
 
 .flex-row {
@@ -450,70 +468,66 @@ h1 {
 }
 
 .header-row {
-  border-bottom: 1px solid #ccc;
+  background-color: transparent;
+  border-bottom: 2px solid var(--border);
 }
 
 .header-cell {
-  flex-grow: 1; 
-  flex-basis: 0; 
+  flex: 1;
   padding: 10px 8px;
-  font-weight: bold;
   text-align: center;
-  border-right: 1px solid #ddd;
-  background-color: #f0f0f0;
   font-size: 0.9em;
-  color: #333;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.header-cell:last-child {
-  border-right: none;
+  font-weight: 500;
+  color: var(--text-muted); /* ✅ Бледный цвет заголовков */
+  text-transform: none;
+  letter-spacing: 0.5px;
 }
 
 .input-cell {
-  flex-grow: 1; 
-  flex-basis: 0; 
-  padding: 5px 8px;
-  border-right: 1px solid #ddd;
-}
-
-.input-cell:last-child {
-  border-right: none;
+  flex: 1;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  background-color: white;
 }
 
 .field-input-cell {
   width: 100%;
-  padding: 5px;
-  border: 1px solid #eee; 
+  padding: 10px 8px;
+  border: 1px solid var(--border);
   border-radius: 4px;
   box-sizing: border-box;
   text-align: center;
+  font-size: 0.95em;
+  background-color: white;
+  transition: border-color 0.2s;
 }
 
 .field-input-cell:focus {
-  border-color: #007bff;
+  border-color: var(--primary);
   outline: none;
-  box-shadow: 0 0 0 1px rgba(0, 123, 255, 0.25);
+  box-shadow: 0 0 0 3px rgba(28, 124, 84, 0.1);
 }
 
+/* Маленькая кнопка поиска — слева над таблицей */
 .submit-button {
-  display: block;
-  width: 100%;
-  padding: 12px;
-  margin-top: 30px;
-  background-color: #28a745;
+  display: inline-flex;
+  padding: 8px 14px;
+  background-color: var(--primary);
   color: white;
   border: none;
   border-radius: 6px;
-  font-size: 1.1em;
+  font-size: 0.95em;
+  font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  align-self: flex-start;
+  margin-top: 10px;
+  margin-left: 2px;
 }
 
 .submit-button:hover:not(:disabled) {
-  background-color: #218838;
+  background-color: var(--primary-dark);
 }
 
 .submit-button:disabled {
@@ -521,132 +535,144 @@ h1 {
   cursor: not-allowed;
 }
 
-/* 3. Стили Таблицы Результатов и Обновления */
+/* Контейнер для кнопок над таблицей */
+.table-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 25px 0 10px;
+  padding: 0 2px;
+}
+
+.table-controls .submit-button {
+  margin: 0;
+}
+
+.global-update-button {
+  padding: 8px 14px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.global-update-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.global-update-button:disabled {
+  background-color: #94d3a2;
+  color: #fff;
+  cursor: not-allowed;
+}
+
+/* Блок с результатами — как отдельная секция */
+.results-table-container {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
 
 .table-scroll-wrapper {
   overflow-x: auto;
-  margin-top: 15px;
+  margin-top: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
 }
 
 .results-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
   min-width: 800px;
-  table-layout: fixed;
-}
-
-.results-table th, .results-table td {
-  padding: 0;
-  border: 1px solid #e0e0e0;
-  text-align: left;
-  font-size: 0.9em;
-  height: 40px; 
+  table-layout: auto;
+  background-color: white;
 }
 
 .results-table th {
-  padding: 8px 10px;
-  background-color: #007bff;
-  color: white;
-  font-weight: bold;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  background-color: transparent;
+  color: var(--text-muted); /* ✅ Бледный цвет заголовков */
+  font-weight: 500;
+  font-size: 0.9em;
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 2px solid var(--border);
+  letter-spacing: 0.5px;
 }
 
-.result-cell-input {
-  padding: 0; 
+.results-table td {
+  padding: 0;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 0.95em;
 }
 
-.results-table input {
+.result-cell-input input {
   width: 100%;
   height: 100%;
-  padding: 8px;
-  box-sizing: border-box;
+  padding: 10px 6px;
   border: none;
   background-color: transparent;
+  text-align: center;
+  font-size: 0.95em;
+  box-sizing: border-box;
   transition: background-color 0.2s;
 }
 
-/* Фокус на поле ввода */
-.results-table input:focus {
-  background-color: #fffde7; 
-  outline: 1px solid #ffc107;
+.result-cell-input input:focus {
+  background-color: #f0f8ff;
+  outline: 2px solid var(--primary);
   border-radius: 0;
 }
 
-/* Выделение измененного поля */
-.results-table input.modified {
-  background-color: #e6ffed; /* Светло-зеленый фон */
-  color: #1890ff;
-}
-
-/* 4. Стили Общей Кнопки и Сообщений */
-
-.update-separator {
-  margin: 15px 0;
-  border: 0;
-  border-top: 1px solid #eee;
-}
-
-.global-update-actions {
-  margin-top: 25px;
-  padding: 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: #ffffff;
-  text-align: center;
-}
-
-.global-update-button {
-  /* Переопределяем submit-button для глобальной кнопки */
-  margin-top: 0;
-  width: 90%;
-  padding: 15px;
-  font-size: 1.2em;
-  background-color: #007bff; /* Синий цвет для действия обновления */
-}
-
-.global-update-button:hover:not(:disabled) {
-  background-color: #0056b3;
-}
-
-.update-error {
-  margin-top: 15px;
-  background-color: #fff2e8;
-  color: #f5222d;
-  border: 1px solid #ffbb96;
-}
-
-.update-success {
-  margin-top: 15px;
-  background-color: #f6ffed;
-  color: #52c41a;
-  border: 1px solid #b7eb8f;
-  font-size: 1em;
-}
-.field-input-cell:readonly {
-  background-color: #f5f5f5;
-  color: #777;
-  cursor: not-allowed;
-  border: 1px solid #ddd;
-  font-style: italic;
-}
-
-.result-cell-input.id-cell {
-  background-color: #e9ecef; /* Светло-серый фон */
+.result-cell-input input.modified {
+  background-color: #e6ffed;
+  color: var(--primary);
   font-weight: 500;
+  border: 1px solid #a3d9b1;
+  border-radius: 4px;
+}
+
+/* id-столбец — серый и неактивный */
+.result-cell-input.id-cell {
+  background-color: #fafafa;
+  color: var(--text-secondary);
   font-style: italic;
-  color: #495057;
-  cursor: not-allowed;
-  user-select: none;
 }
 
 .result-cell-input.id-cell input {
-  background-color: #e9ecef;
-  color: #495057;
-  font-style: italic;
+  background-color: #fafafa !important;
+  color: var(--text-secondary) !important;
   cursor: not-allowed;
+  font-style: italic;
+}
+
+/* Сообщения об обновлении */
+.update-error,
+.update-success {
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  text-align: center;
+}
+
+.update-error {
+  background-color: #ffebee;
+  color: var(--error);
+  border: 1px solid #f5c6cb;
+}
+
+.update-success {
+  background-color: #e6ffed;
+  color: var(--success);
+  border: 1px solid #a3d9b1;
 }
 
 </style>

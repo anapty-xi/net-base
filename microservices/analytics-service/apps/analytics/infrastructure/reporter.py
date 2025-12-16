@@ -96,7 +96,7 @@ class Reporter(TableReportProtocol):
         '''
         Делает запрос к бд для получения всех строк таблицы
         '''
-        return requests.get(f'{settings.DB_OPERATIONS_SERVICE_URL}/db/get_rows/{table_title}/', headers={'Authorization': f'Bearer {token}'}).json()
+        return requests.post(f'{settings.DB_OPERATIONS_SERVICE_URL}/db/get_rows/{table_title}/', headers={'Authorization': f'Bearer {token}'}).json()
                               
 
         
