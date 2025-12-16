@@ -85,7 +85,7 @@ class UpdatesValidator(): #TODO: в таблицу модет не быть эт
         date_field = table_cols[table_cols_lower.index('дата')]
 
         if check_field in updates.keys():
-            if updates[check_field] not in ['+', 'з', 'З', '']:
+            if updates[check_field] not in ['+', 'з', 'З', '', 'у']:
                 raise ValueError(f'Значение словаря обновления "{check_field}" = "{updates[check_field]}", что не удволетворяет условиям столбца')
             updates[date_field] = str(datetime.datetime.now().strftime('%d.%m.%Y'))
         return updates

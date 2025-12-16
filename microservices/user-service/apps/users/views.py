@@ -30,18 +30,19 @@ def login_view(request):
         )
     auth_infrastructure = JWTAuthentication()
     user = LoginUser(auth_infrastructure).execute(username, password)
-    logger.info('User login')
-    refresh, access = CreateTokens(auth_infrastructure).execute(user)
-    if refresh:
+    if user:
         logger.info('User login')
-        return Response ({
-            'access': access,
-            'refresh': refresh,
-            'user': {
-                'id': user.id,
-                'username': user.username,
-            }
-        })
+        refresh, access = CreateTokens(auth_infrastructure).execute(user)
+        if refresh:
+            logger.info('User login')
+            return Response ({
+                'access': access,
+                'refresh': refresh,
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                }
+            })
     logger.info(f'{username}, {password} are invalid data')
     return Response(
         {'error', 'Неверные учетные данные'},

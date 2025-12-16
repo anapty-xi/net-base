@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginView from '../views/LoginView.vue'
 import Homepage from '../views/Homepage.vue'
 import TableView from '../views/TableView.vue';
-
+import Report from '../views/Report.vue';
 
 const routes = [
   {
@@ -20,6 +20,11 @@ const routes = [
     name: 'TableView',
     component: TableView,
     props: true
+  },
+  {
+    path: '/report',
+    name: 'Report',
+    component: Report
   }
 
 ];

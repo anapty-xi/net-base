@@ -62,13 +62,20 @@
             <tbody>
               <tr v-for="(row, index) in dataResults" :key="row.pkValue || index">
                 
-                <td v-for="field in fields" :key="field" class="result-cell-input">
+                <td
+                  v-for="field in fields"
+                  :key="field"
+                  class="result-cell-input"
+                  :class="{ 'id-cell': field.toLowerCase() === 'id' }"
+                >
                   <input
                     type="text"
                     :name="field"
-                    v-model="row.data[field]" 
+                    :value="getInputValue(row.data, field)"
+                    @input="onInput(row, field, $event)"
                     :class="{'modified': row.isModified[field]}"
-                    @input="markAsModified(row, field)" 
+                    :readonly="field.toLowerCase() === 'id'"
+                    class="field-input-cell"
                   />
                 </td>
                 
@@ -142,6 +149,7 @@ const UPDATE_URL = `${BASE_URL}update_row/${tableName}/`;
 const enrichRow = (rowData) => {
     const enriched = {
         data: rowData,
+        originalData: { ...rowData },
         pkValue: rowData[pkField.value], 
         isModified: {}, 
         hasModifications: false, 
@@ -152,6 +160,8 @@ const enrichRow = (rowData) => {
     });
     return enriched;
 };
+
+const checkColumnIndex = ref(-1);
 
 const fetchSchema = async () => {
   const SCHEMA_URL = `${BASE_URL}get_table_info/${tableName}/`;
@@ -164,9 +174,13 @@ const fetchSchema = async () => {
     if (Array.isArray(allFields) && allFields.length > 0) {
         pkField.value = allFields[0]; 
         fields.value = allFields; 
+        checkColumnIndex.value = fields.value.findIndex(field => 
+          field.toLowerCase() === 'проверено'
+        );
     } else {
         fields.value = [];
         pkField.value = null; 
+        checkColumnIndex.value = -1;
     }
     
     fields.value.forEach(field => {
@@ -197,7 +211,9 @@ const submitData = async () => {
     }, {});
     
     try {
-        const response = await axios.get(SEARCH_URL, {'conditions': queryPayload});
+        const response = await axios.get(SEARCH_URL, {
+          params: queryPayload,
+        });
         
         const structuredRows = response.data.rows || response.data; 
         
@@ -235,6 +251,43 @@ const submitData = async () => {
     } finally {
         submitting.value = false;
     }
+};
+
+const getInputValue = (data, field) => {
+  const fieldName = field.toLowerCase();
+  const value = data[field];
+
+  if (fieldName === 'проверено' && value === 'у') {
+    return '+'; // "у" → показываем как "+"
+  }
+
+  return value;
+};
+
+const onInput = (row, field, event) => {
+  // ✅ Блокируем любое поле с именем 'id' (регистронезависимо)
+  if (field.toLowerCase() === 'id') {
+    return;
+  }
+
+  const newValue = event.target.value.trim();
+  const fieldName = field.toLowerCase();
+
+  if (fieldName === 'проверено') {
+    const originalValue = row.originalData[field];
+
+    if (['з', 'З'].includes(originalValue) && newValue === '+') {
+      row.data[field] = 'у';
+    } else if (newValue === '+') {
+      row.data[field] = 'у';
+    } else {
+      row.data[field] = newValue;
+    }
+  } else {
+    row.data[field] = newValue;
+  }
+
+  markAsModified(row, field);
 };
 
 const markAsModified = (row, fieldName) => {
@@ -571,6 +624,29 @@ h1 {
   color: #52c41a;
   border: 1px solid #b7eb8f;
   font-size: 1em;
+}
+.field-input-cell:readonly {
+  background-color: #f5f5f5;
+  color: #777;
+  cursor: not-allowed;
+  border: 1px solid #ddd;
+  font-style: italic;
+}
+
+.result-cell-input.id-cell {
+  background-color: #e9ecef; /* Светло-серый фон */
+  font-weight: 500;
+  font-style: italic;
+  color: #495057;
+  cursor: not-allowed;
+  user-select: none;
+}
+
+.result-cell-input.id-cell input {
+  background-color: #e9ecef;
+  color: #495057;
+  font-style: italic;
+  cursor: not-allowed;
 }
 
 </style>

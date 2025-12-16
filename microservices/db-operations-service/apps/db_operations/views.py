@@ -109,7 +109,7 @@ def delete_table(request, table):
 def get_rows(request, table):
     '''получание колонок по определенным значениям столбцов'''
 
-    data = request.data
+    data = dict(request.query_params)
     infrastucture = RepositoryManager()
     usecase = table_usecases.GetRows(infrastucture)
     rows = usecase.execute(table, data)

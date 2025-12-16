@@ -29,6 +29,12 @@
       </li>
     </ul>
 
+    <div class="action-buttons">
+      <router-link to="/report" class="report-button">
+        Отчёт
+      </router-link>
+    </div>
+
     <!-- Кнопка и форма для создания таблицы из CSV (только для isStaff) -->
     <div v-if="isStaff" class="create-actions">
       <button @click="showUploadForm = !showUploadForm" class="create-button">
@@ -386,5 +392,28 @@ h3 {
 
 .analytics-checkbox input {
   margin-right: 8px;
+}
+
+.report-button,
+.create-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  text-decoration: none;
+  text-align: center;
+  transition: background-color 0.2s;
+  flex: 1;
+  min-width: 160px;
+}
+
+.report-button {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.report-button:hover {
+  background-color: #138496;
 }
 </style>
