@@ -1,10 +1,10 @@
 <template>
   
   <div class="homepage-container">
-    <div class="tables-container">
+    <div class="tables-container" style="margin-top: 7rem; margin-left: 2rem;">
         <TablesView />
     </div>
-    <div class="account-container">
+    <div class="account-container" style="margin-top: 12rem; margin-left: 20rem;">
         <Account />
     </div>
     

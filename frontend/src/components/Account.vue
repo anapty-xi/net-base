@@ -70,11 +70,11 @@ const logout = () => {
 
 <style scoped>
 .account-container {
-  display: flex;
+
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--bg-page);
+
 }
 
 .profile-card {

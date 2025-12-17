@@ -33,17 +33,21 @@ def create_table(request):
     analytics = request.data.get('in_analytics')
     infrastructure = RepositoryManager()
     usecase = table_usecases.CreateTable(infrastructure)
-    logger.info(f'got file\n title={file.table_title}\ncols={file.cols}\nrows={file.rows}\nanal={analytics}')
-    if not usecase.execute(file.table_title, file.cols, file.rows, analytics):
-        logger.error(f'error ocured while {file.table_title} creating')
+    logger.info(f'got file\n title={file.table_title}\ncols={file.cols}\nanal={analytics}')
+    try:
+        if not usecase.execute(file.table_title, file.cols, file.rows, analytics):
+            logger.error(f'error ocured while {file.table_title} creating')
+            return Response(
+                {'error', 'Ошибка создании таблицы'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        logger.info(f'table {file.table_title} created')
         return Response(
-            {'error', 'Ошибка создании таблицы'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            status=status.HTTP_201_CREATED
         )
-    logger.info(f'table {file.table_title} created')
-    return Response(
-        status=status.HTTP_201_CREATED
-    )
+    except Exception as e:
+        logger.error(e)
+        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedCustom]) 

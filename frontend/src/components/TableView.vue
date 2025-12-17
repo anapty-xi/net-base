@@ -19,26 +19,28 @@
             {{ submitting ? '...' : 'Поиск' }}
           </button>
         </div>
-        <div class="data-table-layout">
-          <div class="header-row flex-row">
-            <div v-for="field in fields" :key="field" class="header-cell">
-              {{ field }}
+
+        <!-- Обёртка для прокрутки формы ввода фильтров -->
+        <div class="table-scroll-wrapper">
+          <div class="filter-table">
+            <!-- Заголовки -->
+            <div class="filter-table-row header-row">
+              <div v-for="field in fields" :key="field" class="filter-table-cell header-cell">
+                {{ field }}
+              </div>
             </div>
-          </div>
-          <div class="input-row flex-row">
-            <div
-              v-for="field in fields"
-              :key="field"
-              class="input-cell"
-            >
-              <input
-                :id="field"
-                :name="field"
-                type="text"
-                :placeholder="field"
-                class="field-input-cell"
-                v-model="filterCriteria[field]" 
-              />
+
+            <!-- Поля ввода -->
+            <div class="filter-table-row input-row">
+              <div v-for="field in fields" :key="field" class="filter-table-cell input-cell">
+                <input
+                  :id="field"
+                  :name="field"
+                  type="text"
+                  class="field-input-cell"
+                  v-model="filterCriteria[field]"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -673,6 +675,71 @@ h1 {
   background-color: #e6ffed;
   color: var(--success);
   border: 1px solid #a3d9b1;
+}
+
+
+.table-scroll-wrapper {
+  overflow-x: auto;
+  margin-top: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Новая таблица для фильтров — без flex */
+.filter-table {
+  display: table;
+  width: 100%;
+  table-layout: auto; /* или fixed, если нужно жёсткое управление */
+  border-collapse: collapse;
+  background-color: var(--bg-input);
+  min-width: 800px; /* как у results-table */
+}
+
+.filter-table-row {
+  display: table-row;
+}
+
+.filter-table-cell {
+  display: table-cell;
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  box-sizing: border-box;
+  vertical-align: top;
+}
+
+/* Заголовки */
+.header-cell {
+  font-size: 0.9em;
+  font-weight: 500;
+  color: var(--text-muted);
+  background-color: transparent;
+  border-bottom: 2px solid var(--border);
+}
+
+/* Поля ввода */
+.input-cell {
+  padding: 6px 8px;
+  background-color: white;
+}
+
+.field-input-cell {
+  width: 100%;
+  padding: 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: 0.95em;
+  background-color: white;
+  transition: border-color 0.2s;
+}
+
+.field-input-cell:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(28, 124, 84, 0.1);
 }
 
 </style>

@@ -31,5 +31,5 @@ class Table(BaseModel):
     def validate_rows_number(self) -> Self:
         for row in self.rows:
             if len(row) != len(self.cols):
-                raise ValueError(f'количество столбцов {len(self.cols)} не совпадает с количеством значений в строке {len(row)}\ncols={self.cols}\nrow={self.rows}')
+                raise ValueError(f'количество столбцов - {len(self.cols)} не совпадает с количеством значений в строке - {len(row)}. вероятно в ячейке используется enter\n\n\ncols={self.cols}\n\n\nrow={row}')
         return self
