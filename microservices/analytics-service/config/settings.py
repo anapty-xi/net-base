@@ -97,7 +97,7 @@ LOGGING = {
 }
 
 
-
+CELERY_BROKER_URL = str(os.getenv('CELERY_BROKER_URL'))
 
 LANGUAGE_CODE = 'en-us'
 

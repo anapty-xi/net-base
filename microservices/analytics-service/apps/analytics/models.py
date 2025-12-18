@@ -1,3 +1,14 @@
 from django.db import models
+from datetime import datetime
 
-# Create your models here.
+class TableReport(models.Model):
+    title = models.CharField()
+    all_rows = models.IntegerField()
+    checked = models.IntegerField()
+    success = models.IntegerField()
+    remarks = models.IntegerField()
+    elemenated_remarks_today = models.IntegerField()
+    remarks_today = models.IntegerField()
+    checked_today = models.IntegerField()
+    rest = models.IntegerField()
+    date = models.DateField(default=datetime.today().date())

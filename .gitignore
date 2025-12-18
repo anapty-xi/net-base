@@ -1,5 +1,9 @@
 __pycache__/
 
+migrations/
+
+*.sqlite3
+
 api-gateway/gate-venv
 api-gateway/.env
 
