@@ -131,3 +131,5 @@ DB_POOL = None
 CELERY_BROKER_URL = str(os.getenv('CELERY_BROKER_URL'))
 
 USER_SERVICE_URL = str(os.getenv('USER_SERVICE_URL'))
+
+API_KEY = str(os.getenv('API_KEY'))

@@ -1,3 +1,6 @@
+'''
+настройка celery, словарь с запланированными тасками
+'''
 import os
 from celery import Celery
 from datetime import timedelta

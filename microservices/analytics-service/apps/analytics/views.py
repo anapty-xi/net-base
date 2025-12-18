@@ -17,9 +17,9 @@ def get_report(request):
     '''
     Точка только для аутентифицированнных пользователей для получения отчета о таблицах
     '''
-    token = request.headers.get('Authorization').split(' ')[1]
+
     reporter = Reporter()
-    usecase = MakeReport(reporter, token)
+    usecase = MakeReport(reporter)
     try:
         report = usecase.execute()
     except Exception as e:

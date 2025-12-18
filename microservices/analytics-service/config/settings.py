@@ -112,3 +112,4 @@ STATIC_URL = 'static/'
 
 USER_SERVICE_URL = str(os.getenv('USER_SERVICE_URL'))
 DB_OPERATIONS_SERVICE_URL = str(os.getenv('DB_OPERATIONS_SERVICE_URL'))
+API_KEY = str(os.getenv('API_KEY'))

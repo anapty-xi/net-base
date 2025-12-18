@@ -1,8 +1,8 @@
 from django.db import models
-from datetime import datetime
+from django.utils import timezone 
 
-class TableReport(models.Model):
-    title = models.CharField()
+class Report(models.Model):
+    title = models.CharField(max_length=128)
     all_rows = models.IntegerField()
     checked = models.IntegerField()
     success = models.IntegerField()
@@ -11,4 +11,4 @@ class TableReport(models.Model):
     remarks_today = models.IntegerField()
     checked_today = models.IntegerField()
     rest = models.IntegerField()
-    date = models.DateField(default=datetime.today().date())
+    date = models.DateField(default=timezone.now)

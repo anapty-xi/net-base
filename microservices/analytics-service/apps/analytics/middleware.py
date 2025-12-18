@@ -12,6 +12,7 @@ class JWTAuthenticationMiddleware:
     def __call__(self, request):
         if request.path in ['/health/', '/admin/']:
             return self.get_response(request)
+
         
         auth_header: str = request.headers.get('Authorization')
         if auth_header and auth_header.startswith('Bearer '):
