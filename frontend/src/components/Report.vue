@@ -1,8 +1,24 @@
-<!-- ReportView.vue -->
 <template>
   <div class="report-container">
     <h1>Отчёт по таблицам</h1>
 
+    <!-- Форма ввода даты -->
+    <div class="date-input-section">
+      <label for="report-date">Выберите дату (дд.мм.гггг):</label>
+      <input
+        id="report-date"
+        v-model="dateInput"
+        type="text"
+        placeholder="Например: 31.12.2024"
+        @keyup.enter="handleDateSubmit"
+      />
+      <button @click="handleDateSubmit">Загрузить</button>
+      <div v-if="dateError" class="error-message">
+        {{ dateError }}
+      </div>
+    </div>
+
+    <!-- Сообщения состояния -->
     <div v-if="loading" class="state-message loading">
       Загрузка отчёта...
     </div>
@@ -15,10 +31,12 @@
       Нет данных для отображения.
     </div>
 
+    <!-- Таблица -->
     <div v-else class="report-table-wrapper">
       <table class="excel-style-table">
         <thead>
           <tr>
+            <th>Дата</th>
             <th>Таблица</th>
             <th>Выполнение</th>
             <th>Всего</th>
@@ -31,7 +49,8 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="row in reportData" :key="row.title">
+          <tr v-for="(row, index) in reportData" :key="index">
+            <td>{{ displayedDate }}</td>
             <td class="cell-bold">{{ row.title }}</td>
             <td class="cell-percentage">{{ getCompletionPercent(row) }}</td>
             <td>{{ row.all_rows }}</td>
@@ -49,38 +68,104 @@
 </template>
 
 <script setup>
+// ✅ Сначала — все функции, используемые в шаблоне
+function getCompletionPercent(row) {
+  if (!row || typeof row !== 'object') return '0%';
+  if (!row.all_rows || row.all_rows === 0) return '0%';
+  const percent = (row.success || 0) / row.all_rows * 100;
+  return `${percent.toFixed(1)}%`;
+}
+
+// Импорты
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
+// Реактивные данные
 const reportData = ref([]);
-const loading = ref(true);
+const loading = ref(false);
 const error = ref(null);
+const dateInput = ref('');
+const dateError = ref('');
+const displayedDate = ref('');
 
-const BASE_URL = 'http://localhost:8000/'; 
+// Конфигурация
+const BASE_URL = 'http://localhost:8000/';
 const REPORT_URL = `${BASE_URL}analytics/tables_report/`;
 
+// Форматирование даты в dd.mm.yyyy
+const formatDate = (date) => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+// Установка сегодняшней даты по умолчанию
+const setTodayDate = () => {
+  const today = new Date();
+  dateInput.value = formatDate(today);
+  displayedDate.value = dateInput.value;
+};
+
+// Валидация формата dd.mm.yyyy
+const validateDate = (value) => {
+  const regex = /^(0[1-9]|[12][0-9]|3[01])\.(0[1-9]|1[0-2])\.(\d{4})$/;
+  if (!regex.test(value)) return 'Неверный формат. Используйте: дд.мм.гггг';
+
+  const [day, month, year] = value.split('.').map(Number);
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return 'Неверная дата (например, 32 февраля)';
+  }
+
+  return '';
+};
+
+// Загрузка отчёта
 const fetchReport = async () => {
+  const err = validateDate(dateInput.value);
+  if (err) {
+    dateError.value = err;
+    return;
+  }
+  dateError.value = '';
+  loading.value = true;
+  error.value = null;
+  reportData.value = [];
+
   try {
-    const response = await axios.get(REPORT_URL);
+    const response = await axios.get(REPORT_URL, {
+      params: { date: dateInput.value },
+    });
+
     if (Array.isArray(response.data)) {
       reportData.value = response.data;
+      displayedDate.value = dateInput.value;
     } else {
       throw new Error('Неверный формат данных: ожидается массив');
     }
   } catch (err) {
-    error.value = `Не удалось загрузить отчёт: ${err.message}`;
+    error.value = `Не удалось загрузить отчёт: ${
+      err.response?.data?.error || err.message || 'неизвестная ошибка'
+    }`;
   } finally {
     loading.value = false;
   }
 };
 
-const getCompletionPercent = (row) => {
-  if (!row.all_rows) return '0%';
-  const percent = (row.success / row.all_rows) * 100;
-  return `${percent.toFixed(1)}%`;
+// Обработка отправки формы
+const handleDateSubmit = () => {
+  fetchReport();
 };
 
+// При монтировании — загружаем отчёт за сегодня
 onMounted(() => {
+  setTodayDate();
   fetchReport();
 });
 </script>
@@ -99,6 +184,48 @@ h1 {
   color: #2c3e50;
   text-align: center;
   margin-bottom: 20px;
+}
+
+/* Форма ввода даты */
+.date-input-section {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.date-input-section label {
+  font-weight: 500;
+  color: #333;
+  margin-right: 8px;
+}
+
+.date-input-section input {
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 180px;
+}
+
+.date-input-section button {
+  margin-left: 8px;
+  padding: 8px 16px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.date-input-section button:hover {
+  background-color: #1565c0;
+}
+
+.error-message {
+  color: #c62828;
+  font-size: 0.9em;
+  margin-top: 6px;
+  text-align: left;
 }
 
 /* Excel-подобная таблица */

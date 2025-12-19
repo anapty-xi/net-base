@@ -116,7 +116,6 @@ LOGGING = {
 }
 
 
-CORS_ALLOWED_ORIGINS = [str(os.getenv('API_GATE_URL'))]
 
 
 LANGUAGE_CODE = 'en-us'

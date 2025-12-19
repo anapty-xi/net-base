@@ -1,5 +1,6 @@
 import requests
 import logging
+import datetime
 
 from ..usecases.table_report_gateway import TableReportProtocol
 from django.conf import settings
@@ -7,6 +8,8 @@ from typing import Dict, List
 from datetime import datetime
 from ..entities.table_report import TableReport 
 from django.conf import settings
+from ..models import Report
+
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +101,30 @@ class Reporter(TableReportProtocol):
         Делает запрос к бд для получения всех строк таблицы
         '''
         return requests.post(f'{settings.DB_OPERATIONS_SERVICE_URL}/db/get_rows/{table_title}/', headers={'X-API-Key': settings.API_KEY}).json()
+    
+    def report_for_date(self, date: datetime.date) -> List[TableReport]:
+        db_reports = Report.objects.filter(date=date)
+        if db_reports:
+            reports = []
+            for report in db_reports:
+                entity_report = TableReport(
+                    title = report.title,
+                    all_rows = report.all_rows,
+                    checked = report.checked,
+                    success = report.success,
+                    remarks = report.remarks,
+                    elemenated_remarks_today = report.elemenated_remarks_today,
+                    remarks_today = report.remarks_today,
+                    checked_today = report.checked_today,
+                    rest = report.rest,
+                )
+                reports.append(entity_report)
+            return reports
+        return db_reports
+                
+        
+
+        
                               
 
         

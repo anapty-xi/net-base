@@ -3,7 +3,8 @@
 '''
 import os
 from celery import Celery
-from datetime import timedelta
+from celery.schedules import crontab
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
@@ -14,6 +15,6 @@ app.autodiscover_tasks()
 app.conf.beat_schedule = {
     'save_report': {
         'task': 'apps.analytics.tasks.save_report',
-        'schedule': timedelta(minutes=1)
+        'schedule': crontab(hour=23, minute=59)
     }
 }

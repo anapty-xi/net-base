@@ -3,6 +3,7 @@ import logging
 from .table_report_gateway import TableReportProtocol
 from ..entities.table_report import TableReport
 from typing import List
+from datetime import datetime, date
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +14,9 @@ class MakeReport:
     def __init__(self, reporter: TableReportProtocol):
         self.reporter = reporter
 
-    def execute(self) -> List[TableReport]:
+    def execute(self, date: date) -> List[TableReport]:
+        if date != datetime.now().date():
+            return self.reporter.report_for_date(date)
         tabels_to_report = self.reporter.get_analytics_schemes()
         logger.info(f'tables for report {tabels_to_report}')
         report = []
