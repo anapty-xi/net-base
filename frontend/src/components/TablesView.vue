@@ -13,6 +13,7 @@
     <ul v-else class="table-list">
       <li v-for="tableName in tables" :key="tableName" class="table-item">
         
+        <!-- Чекбокс для удаления (только staff) -->
         <input 
           v-if="isStaff" 
           type="checkbox" 
@@ -22,9 +23,20 @@
           class="delete-checkbox"
         >
         
-        <router-link :to="{ name:'TableView', params: {tableName: tableName} }" class="table-link">
+        <!-- Ссылка на таблицу -->
+        <router-link :to="{ name: 'TableView', params: { tableName: tableName } }" class="table-link">
           {{ tableName }}
         </router-link>
+
+        <!-- Кнопка "Скачать Excel" -->
+        <button
+          @click="downloadExcel(tableName)"
+          class="download-button"
+          :disabled="isDownloading[tableName]"
+          :title="`Скачать таблицу ${tableName} как Excel`"
+        >
+          {{ isDownloading[tableName] ? 'Скачивание...' : '📥 Excel' }}
+        </button>
 
       </li>
     </ul>
@@ -71,7 +83,6 @@
       </div>
     </div>
 
-
     <!-- Блок удаления выбранных таблиц -->
     <div v-if="isStaff && selectedTables.length > 0" class="delete-actions">
       <button @click="deleteSelectedTables" :disabled="isDeleting" class="delete-button">
@@ -88,13 +99,14 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
+// URLs
 const USER_INFO_URL = 'http://localhost:8000/user/user/';
 const DB_INFO_URL = 'http://localhost:8000/db/get_table_info/';
-const DB_CREATE_URL = 'http://localhost:8000/db/create/'
+const DB_CREATE_URL = 'http://localhost:8000/db/create/';
 const DB_DELETE_BASE_URL = 'http://localhost:8000/db/delete/';
+const DB_DOWNLOAD_URL = 'http://localhost:8000/db/table_file/'; // ← новый URL
 
-
-
+// Реактивные данные
 const tables = ref([]);
 const isStaff = ref(false);
 const selectedTables = ref([]);
@@ -103,14 +115,15 @@ const error = ref(null);
 const isDeleting = ref(false);
 const deleteError = ref(null);
 
-
 const showUploadForm = ref(false);
 const uploadFile = ref(null);
 const uploading = ref(false);
 const uploadError = ref(null);
 const inAnalytics = ref(false);
 
+const isDownloading = ref({}); // Для отображения состояния скачивания
 
+// Загрузка данных
 const fetchData = async () => {
   loading.value = true;
   error.value = null;
@@ -179,13 +192,13 @@ const handleFileSelect = (event) => {
   }
 };
 
-// Отправка CSV на сервер для создания таблицы
+// Отправка CSV на сервер
 const uploadCSV = async () => {
   if (!uploadFile.value || uploading.value) return;
 
   const formData = new FormData();
   formData.append('file', uploadFile.value);
-  formData.append('in_analytics', inAnalytics.value); 
+  formData.append('in_analytics', inAnalytics.value);
 
   uploading.value = true;
   uploadError.value = null;
@@ -197,7 +210,6 @@ const uploadCSV = async () => {
       },
     });
 
-    // Успешная загрузка — обновляем список таблиц
     await fetchData();
     showUploadForm.value = false;
     uploadFile.value = null;
@@ -209,6 +221,38 @@ const uploadCSV = async () => {
   }
 };
 
+// Скачивание таблицы как Excel
+const downloadExcel = async (tableName) => {
+  isDownloading.value[tableName] = true;
+  try {
+    const response = await axios.get(`${DB_DOWNLOAD_URL}${tableName}/`, {
+      responseType: 'blob' // Обязательно!
+    });
+
+    // Проверка на ошибку (например, 500 → blob с текстом ошибки)
+    const contentType = response.headers['content-type'];
+    if (contentType && contentType.includes('application/json')) {
+      const errorBlob = await response.data.text();
+      throw new Error(`Ошибка: ${errorBlob}`);
+    }
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${tableName}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(`Ошибка при скачивании ${tableName}:`, err);
+    alert(`Не удалось скачать таблицу "${tableName}". Проверьте, существует ли она.`);
+  } finally {
+    isDownloading.value[tableName] = false;
+  }
+};
+
+// Жизненный цикл
 onMounted(() => {
   fetchData();
 });
@@ -566,4 +610,217 @@ h1, h3 {
 .delete-button:hover:not(:disabled) {
   background-color: #c62828;
 }
+
+.download-button {
+  margin-left: auto;
+  padding: 6px 10px;
+  font-size: 0.85em;
+  background-color: #1d6940;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.download-button:hover:not(:disabled) {
+  background-color: #164d31;
+}
+
+.download-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Остальные стили — как в оригинале (ниже можно оставить все твои стили) */
+
+/* Пример: оставь всё, что было... */
+.db-table-view {
+  padding: 30px;
+  background-color: var(--bg-page);
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  max-width: 1000px;
+  margin: 20px auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+h3 {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-bottom: 20px;
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 8px;
+}
+
+.state-message {
+  padding: 14px;
+  border-radius: 6px;
+  font-size: 0.95em;
+  text-align: center;
+  margin: 16px 0;
+  font-weight: 500;
+}
+
+.loading {
+  background-color: var(--primary-light);
+  color: var(--primary-dark);
+  border: 1px solid rgba(28, 124, 84, 0.3);
+}
+
+.error {
+  background-color: #ffebee;
+  color: var(--error);
+  border: 1px solid #f5c6cb;
+}
+
+.info {
+  background-color: #f0f8ff;
+  color: var(--info);
+  border: 1px solid #c4e2ff;
+}
+
+.table-list {
+  list-style: none;
+  padding: 0;
+  margin: 20px 0;
+}
+
+.table-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  transition: background-color 0.1s;
+}
+
+.table-item:hover {
+  background-color: var(--bg-table);
+}
+
+.delete-checkbox {
+  margin-right: 12px;
+  transform: scale(1.3);
+  cursor: pointer;
+}
+
+.table-link {
+  text-decoration: none;
+  color: var(--primary);
+  font-size: 1.05em;
+  flex-grow: 1;
+  padding: 10px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.table-link:hover {
+  color: var(--primary-dark);
+  background-color: var(--primary-light);
+}
+
+.action-row {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.small-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: background-color 0.2s;
+  flex: 1;
+  min-width: 130px;
+  max-width: 180px;
+}
+
+.report-button {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.report-button:hover {
+  background-color: #138496;
+}
+
+.create-button {
+  background-color: var(--primary);
+  color: white;
+}
+
+.create-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.create-actions {
+  margin-top: 10px;
+}
+
+.upload-form {
+  padding: 18px;
+  border: 2px dashed var(--primary);
+  border-radius: 8px;
+  background-color: var(--bg-card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.upload-button {
+  background-color: var(--primary);
+  color: white;
+  padding: 10px 16px;
+}
+
+.cancel-button {
+  background-color: #6c757d;
+  color: white;
+  padding: 10px 16px;
+}
+
+.cancel-button:hover {
+  background-color: #545b62;
+}
+
+.delete-actions {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.delete-button {
+  align-self: center;
+  background-color: var(--error);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  min-width: 200px;
+  font-size: 0.95em;
+}
+
+.delete-button:hover:not(:disabled) {
+  background-color: #c62828;
+}
 </style>
+

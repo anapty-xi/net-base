@@ -7,5 +7,6 @@ urlpatterns = [
     path('get_table_info/<str:table>/', views.get_table, name='get_table'),
     path('delete/<str:table>/', views.delete_table, name='delete_table'),
     path('get_rows/<str:table>/', views.get_rows, name='get_rows'),
-    path('update_row/<str:table>/', views.update_row, name='update_row')
+    path('update_row/<str:table>/', views.update_row, name='update_row'),
+    path('table_file/<str:table>/', views.table_file, name='table_file')
 ]

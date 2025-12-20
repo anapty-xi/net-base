@@ -1,14 +1,22 @@
 import logging
 
+from django.http import HttpResponse
+
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.parsers import MultiPartParser, FormParser
-from .infrastructure.serializers.scv_serializer import CsvHandler
-from .permissions import IsAdminCustom,IsAuthenticatedCustom
-from .usecases import table_usecases
-from .infrastructure.repository_manager import RepositoryManager
 from rest_framework.permissions import AllowAny
+
+from .infrastructure.serializers.scv_serializer import CsvHandler
+from .infrastructure.serializers.xlsx_serializer import XLSXSerializer
+from .infrastructure.repository_manager import RepositoryManager
+
+from .permissions import IsAdminCustom,IsAuthenticatedCustom
+
+from .usecases import table_usecases
+
+
 
 logger = logging.getLogger(__name__)
 
@@ -153,3 +161,39 @@ def update_row(request, table):
             {'errors', 'данные не верны'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticatedCustom])
+def table_file(request, table):
+    '''
+    Получение файла xlsx для таблицы
+    '''
+    try:
+        schema_infrastructure = RepositoryManager()
+        schema_usecase = table_usecases.TableInfo(schema_infrastructure)
+        schema = schema_usecase.execute(table)
+
+        rows_infrastructure = RepositoryManager()
+        rows_usecase = table_usecases.GetRows(rows_infrastructure)
+        rows = rows_usecase.execute(table, None)
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    serializer = XLSXSerializer()
+    try:
+        xlsx_table = serializer.serialize(table, schema[table], rows)
+    except Exception as e:
+        return Response(
+            {'error': f'ошибка сериализации в файл: {e}'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+    response = HttpResponse(
+        xlsx_table,
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{table}.xlsx"'
+    return response
+

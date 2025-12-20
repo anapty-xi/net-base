@@ -88,17 +88,17 @@ class RepositoryManager(TableGateway):
             metadata_obj.remove(table)
         return True
 
-    def get_rows(self, title: str, query_params: Dict[str, str]) -> List[List[str]]: #TODO: если нет query_param то вернуть все строки
+    def get_rows(self, title: str, query_params: Dict[str, str]) -> List[List[str]]: 
         '''
         Получения всех строк удвлотворяющих параментрам поиска
         '''
         table = self._get_table_obj(title)
         table_cols = [col.name for col in table.columns]
-        for col in query_params:
-            if col not in table_cols:
-                raise ValueError(f'Столбец {col} не является столбцом таблицы {title}')
         stmt = select(table)
         if query_params:
+            for col in query_params:
+                if col not in table_cols:
+                    raise ValueError(f'Столбец {col} не является столбцом таблицы {title}')            
             for col, val in query_params.items():
                 stmt = stmt.where(table.columns[col] == val)
         with self.engine.connect() as connection:
