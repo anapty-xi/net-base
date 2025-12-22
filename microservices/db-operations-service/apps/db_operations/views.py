@@ -8,7 +8,6 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import AllowAny
 
-from .infrastructure.serializers.scv_serializer import CsvHandler
 from .infrastructure.serializers.xlsx_serializer import XLSXSerializer
 from .infrastructure.repository_manager import RepositoryManager
 
@@ -24,38 +23,39 @@ logger = logging.getLogger(__name__)
 @permission_classes([IsAdminCustom])
 @parser_classes([MultiPartParser, FormParser])
 def create_table(request):
-    '''создание и заполнение таблицы по переданному csv файлу'''
+    '''создание и заполнение таблицы по переданному файлу'''
 
     if 'file' not in request.data:
         return Response(
-            {'error': 'csv файл необходим'},
+            {'error': 'xlsx файл необходим'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    serializer = XLSXSerializer()
     try:
-        file = CsvHandler(request.data.get('file'))
+        file = serializer.unserialize(request.data.get('file'))
     except TypeError:
         return Response(
-            {'error': 'файл должен быть csv'},
+            {'error': 'файл должен быть xlsx'},
             status=status.HTTP_400_BAD_REQUEST
         )
     analytics = request.data.get('in_analytics')
     infrastructure = RepositoryManager()
     usecase = table_usecases.CreateTable(infrastructure)
-    logger.info(f'got file\n title={file.table_title}\ncols={file.cols}\nanal={analytics}')
-    try:
-        if not usecase.execute(file.table_title, file.cols, file.rows, analytics):
-            logger.error(f'error ocured while {file.table_title} creating')
-            return Response(
-                {'error', 'Ошибка создании таблицы'},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        logger.info(f'table {file.table_title} created')
+    logger.info(f'got file\n title={file['title']}\ncols={file['cols']}\nanal={analytics}')
+    # try:
+    if not usecase.execute(file['title'], file['cols'], file['rows'], analytics):
+        logger.error(f'error ocured while {file['title']} creating')
         return Response(
-            status=status.HTTP_201_CREATED
+            {'error', 'Ошибка создании таблицы'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-    except Exception as e:
-        logger.error(e)
-        return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    logger.info(f'table {file['title']} created')
+    return Response(
+        status=status.HTTP_201_CREATED
+    )
+    # except Exception as e:
+    #     logger.error(e)
+    #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedCustom]) 

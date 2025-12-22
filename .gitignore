@@ -18,3 +18,4 @@ microservices/analytics-service/.env
 api-gateway/.env
 
 microservices/analytics-service/celerybeat-schedule
+microservices/db-operations-service/celerybeat-schedule

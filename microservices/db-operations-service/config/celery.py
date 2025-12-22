@@ -1,6 +1,6 @@
 import os
-from psycopg2.pool import ThreadedConnectionPool
 from celery import Celery
+from celery.beat import crontab
 from celery.signals import worker_process_init, worker_process_shutdown
 from . import pool
 
@@ -22,3 +22,11 @@ def init_worker(**kwargs):
 def shutdown_pool(**kwargs):
     print('hi')
     pool.shutdown_engine()
+
+
+app.conf.beat_schedule = {
+    'db_dump': {
+        'task': 'apps.db_operations.tasks.db_dump',
+        'schedule': 30.0#crontab(hour=23, minute=59)
+    }
+}

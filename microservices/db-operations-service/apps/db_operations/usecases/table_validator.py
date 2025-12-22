@@ -1,8 +1,11 @@
+import logging
+
 from ..entities.table import Table
 from typing import List, Dict
 from datetime import date
 import datetime
 
+logger = logging.getLogger(__name__)
 class TableValidator:
     '''
     Класс для проверки входной таблицы на соответсвие бизнес логике создания таюлиц. Может изменять входные данные
@@ -42,9 +45,10 @@ class TableValidator:
             for index, row in enumerate(table.rows):
                 if row[date_index] == '':
                     continue
-                day, month, year = row[date_index].split('.')
+                year, month, day  = row[date_index].split('-')
                 try:
                     date.fromisoformat(f'{year}-{month}-{day}')
+                    table.rows[index][date_index] = f'{day}.{month}.{year}'
                 except ValueError:
                     raise ValueError(f'Строка {index} содержит недопустимое значение {row[date_index]} для стобца. Допустимые значения - в формате year.month.day')
         else:

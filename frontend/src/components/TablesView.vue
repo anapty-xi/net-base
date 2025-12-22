@@ -41,7 +41,7 @@
       </li>
     </ul>
 
-    <!-- Кнопки: Отчёт и Создать таблицу — на одном уровне -->
+    <!-- Кнопки: Отчёт и Создать таблицу -->
     <div v-if="isStaff" class="action-row">
       <router-link to="/report" class="report-button small-button">
         Отчёт
@@ -56,7 +56,7 @@
       <div v-if="showUploadForm" class="upload-form">
         <input
           type="file"
-          accept=".csv"
+          accept=".xlsx"
           @change="handleFileSelect"
           ref="fileInput"
           class="file-input"
@@ -73,7 +73,7 @@
           Ошибка: {{ uploadError }}
         </div>
         <div class="upload-actions">
-          <button @click="uploadCSV" :disabled="uploading" class="upload-button">
+          <button @click="uploadToServer" :disabled="uploading" class="upload-button">
             {{ uploading ? 'Загрузка...' : 'Загрузить и создать' }}
           </button>
           <button @click="showUploadForm = false" :disabled="uploading" class="cancel-button">
@@ -83,7 +83,7 @@
       </div>
     </div>
 
-    <!-- Блок удаления выбранных таблиц -->
+    <!-- Удаление выбранных таблиц -->
     <div v-if="isStaff && selectedTables.length > 0" class="delete-actions">
       <button @click="deleteSelectedTables" :disabled="isDeleting" class="delete-button">
         {{ isDeleting ? 'Удаление...' : `Удалить выбранные (${selectedTables.length})` }}
@@ -104,7 +104,7 @@ const USER_INFO_URL = 'http://localhost:8000/user/user/';
 const DB_INFO_URL = 'http://localhost:8000/db/get_table_info/';
 const DB_CREATE_URL = 'http://localhost:8000/db/create/';
 const DB_DELETE_BASE_URL = 'http://localhost:8000/db/delete/';
-const DB_DOWNLOAD_URL = 'http://localhost:8000/db/table_file/'; // ← новый URL
+const DB_DOWNLOAD_URL = 'http://localhost:8000/db/table_file/';
 
 // Реактивные данные
 const tables = ref([]);
@@ -116,12 +116,11 @@ const isDeleting = ref(false);
 const deleteError = ref(null);
 
 const showUploadForm = ref(false);
-const uploadFile = ref(null);
+const selectedFile = ref(null);  // ← переименовано: было uploadFile
 const uploading = ref(false);
 const uploadError = ref(null);
 const inAnalytics = ref(false);
-
-const isDownloading = ref({}); // Для отображения состояния скачивания
+const isDownloading = ref({});
 
 // Загрузка данных
 const fetchData = async () => {
@@ -180,24 +179,41 @@ const deleteSelectedTables = async () => {
   isDeleting.value = false;
 };
 
-// Обработка выбора CSV-файла
+// Обработка выбора XLSX-файла
 const handleFileSelect = (event) => {
   const file = event.target.files[0];
-  if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
-    uploadFile.value = file;
+  if (!file) {
+    selectedFile.value = null;
     uploadError.value = null;
-  } else {
-    uploadFile.value = null;
-    uploadError.value = 'Пожалуйста, выберите корректный CSV-файл.';
+    return;
   }
+
+  const allowedTypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  ];
+
+  if (!allowedTypes.includes(file.type)) {
+    selectedFile.value = null;
+    uploadError.value = 'Пожалуйста, выберите корректный XLSX-файл.';
+    return;
+  }
+
+  if (!file.name.endsWith('.xlsx')) {
+    selectedFile.value = null;
+    uploadError.value = 'Файл должен иметь расширение .xlsx';
+    return;
+  }
+
+  selectedFile.value = file;
+  uploadError.value = null;
 };
 
-// Отправка CSV на сервер
-const uploadCSV = async () => {
-  if (!uploadFile.value || uploading.value) return;
+// Отправка XLSX-файла на сервер
+const uploadToServer = async () => {
+  if (!selectedFile.value || uploading.value) return;
 
   const formData = new FormData();
-  formData.append('file', uploadFile.value);
+  formData.append('file', selectedFile.value);
   formData.append('in_analytics', inAnalytics.value);
 
   uploading.value = true;
@@ -212,10 +228,14 @@ const uploadCSV = async () => {
 
     await fetchData();
     showUploadForm.value = false;
-    uploadFile.value = null;
+    selectedFile.value = null;
+    inAnalytics.value = false;
   } catch (err) {
-    console.error('Ошибка при загрузке CSV:', err);
-    uploadError.value = err.response?.data?.error || 'Не удалось создать таблицу из CSV.';
+    console.error('Ошибка при загрузке XLSX:', err);
+    uploadError.value =
+      err.response?.data?.error ||
+      err.response?.data?.detail ||
+      'Не удалось создать таблицу из XLSX-файла.';
   } finally {
     uploading.value = false;
   }
@@ -226,10 +246,9 @@ const downloadExcel = async (tableName) => {
   isDownloading.value[tableName] = true;
   try {
     const response = await axios.get(`${DB_DOWNLOAD_URL}${tableName}/`, {
-      responseType: 'blob' // Обязательно!
+      responseType: 'blob'
     });
 
-    // Проверка на ошибку (например, 500 → blob с текстом ошибки)
     const contentType = response.headers['content-type'];
     if (contentType && contentType.includes('application/json')) {
       const errorBlob = await response.data.text();
@@ -246,7 +265,7 @@ const downloadExcel = async (tableName) => {
     window.URL.revokeObjectURL(url);
   } catch (err) {
     console.error(`Ошибка при скачивании ${tableName}:`, err);
-    alert(`Не удалось скачать таблицу "${tableName}". Проверьте, существует ли она.`);
+    alert(`Не удалось скачать таблицу "${tableName}".`);
   } finally {
     isDownloading.value[tableName] = false;
   }

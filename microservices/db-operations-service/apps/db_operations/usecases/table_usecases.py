@@ -39,3 +39,4 @@ class DeleteTable(UseCase):
 class GetRows(UseCase):
     def execute(self, title: str, query_params: Dict[str, str]):
         return self.infrastructure_class.get_rows(title, query_params)
+    
