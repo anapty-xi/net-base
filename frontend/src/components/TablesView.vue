@@ -42,7 +42,7 @@
     </ul>
 
     <!-- Кнопки: Отчёт и Создать таблицу -->
-    <div v-if="isStaff" class="action-row">
+    <div class="action-row">
       <router-link to="/report" class="report-button small-button">
         Отчёт
       </router-link>

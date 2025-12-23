@@ -23,59 +23,55 @@
 <script setup>
 import { ref, reactive } from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router'
+import { useRouter } from 'vue-router';
+import { logout } from '@/utils/auth';
 
-
-const LOGIN_URL = 'http://localhost:8000/user/login/'; 
-const router = useRouter()
-
+const LOGIN_URL = 'http://localhost:8000/user/login/';
+const router = useRouter();
 
 const credentials = reactive({
   username: '',
   password: ''
 });
 
-
 const isLoading = ref(false);
 const error = ref(null);
 
 const loginUser = async () => {
   isLoading.value = true;
-  error.value = null; 
-  
-  try {
+  error.value = null;
 
+  try {
     const response = await axios.post(LOGIN_URL, {
       username: credentials.username,
       password: credentials.password
     });
 
     const { access, refresh } = response.data;
-    
-    if (access && refresh) {
 
+    if (access && refresh) {
       localStorage.setItem('accessToken', access);
       localStorage.setItem('refreshToken', refresh);
-
-      
-      console.log('Успешный вход. Токен доступа сохранен:', access);
-      router.push({path: '/homepage'});
-      
-
+      axios.defaults.headers.common['Authorization'] = `Bearer ${access}`;
+      router.push('/homepage');
     } else {
-      error.value = 'Сервер вернул некорректный ответ (нет токенов).';
+      error.value = 'Сервис авторизации вернул неполные данные.';
     }
-    
   } catch (err) {
-    if (err.response.status == 400) {
-      error.value = 'Логин и пароль обязательны';
-      console.error(err);
-    } else if (err.response.status == 401) {
-      error.value = 'Данные не верны';
-      console.error(err);
+    // Теперь interceptor НЕ вызывает logout при 401 на /login
+    if (err.response) {
+      switch (err.response.status) {
+        case 400:
+          error.value = 'Логин и пароль обязательны.';
+          break;
+        case 401:
+          error.value = 'Неверный логин или пароль.';
+          break;
+        default:
+          error.value = 'Ошибка на стороне сервера.';
+      }
     } else {
-      error.value = 'Ошибка сети или недоступность микросервиса.';
-      console.error(err);
+      error.value = 'Нет соединения с сервером.';
     }
   } finally {
     isLoading.value = false;
@@ -88,9 +84,9 @@ const loginUser = async () => {
   width: 22rem;
   margin: 50px auto;
   padding: 30px;
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
   border-radius: 10px;
-  background-color: var(--bg-card);
+  background-color: #ffffff;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
@@ -102,7 +98,7 @@ label {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
-  color: var(--text-primary);
+  color: #2C3E50;
   font-size: 0.95em;
 }
 
@@ -110,18 +106,18 @@ input[type="text"],
 input[type="password"] {
   width: 100%;
   padding: 11px 14px;
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
   border-radius: 6px;
   box-sizing: border-box;
   font-size: 1em;
-  color: var(--text-primary);
-  background-color: var(--bg-page);
+  color: #2C3E50;
+  background-color: #F8F9FA;
   transition: border-color 0.2s;
 }
 
 input[type="text"]:focus,
 input[type="password"]:focus {
-  border-color: var(--primary);
+  border-color: #1C7C54;
   outline: none;
   box-shadow: 0 0 0 3px rgba(28, 124, 84, 0.1);
 }
@@ -129,7 +125,7 @@ input[type="password"]:focus {
 button {
   width: 100%;
   padding: 12px;
-  background-color: var(--primary);
+  background-color: #1C7C54;
   color: white;
   border: none;
   border-radius: 6px;
@@ -140,7 +136,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background-color: var(--primary-dark);
+  background-color: #1A5D43;
 }
 
 button:disabled {
@@ -149,7 +145,7 @@ button:disabled {
 }
 
 .error-message {
-  color: var(--error);
+  color: #d32f2f;
   margin-top: 12px;
   font-size: 0.9em;
   text-align: center;
