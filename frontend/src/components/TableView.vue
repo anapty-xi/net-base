@@ -20,17 +20,13 @@
           </button>
         </div>
 
-        <!-- Обёртка для прокрутки формы ввода фильтров -->
         <div class="table-scroll-wrapper">
           <div class="filter-table">
-            <!-- Заголовки -->
             <div class="filter-table-row header-row">
               <div v-for="field in fields" :key="field" class="filter-table-cell header-cell">
                 {{ field }}
               </div>
             </div>
-
-            <!-- Поля ввода -->
             <div class="filter-table-row input-row">
               <div v-for="field in fields" :key="field" class="filter-table-cell input-cell">
                 <input
@@ -45,7 +41,7 @@
           </div>
         </div>
       </form>
-      
+
       <p v-if="fields.length === 0" class="state-message info">
         В таблице нет полей для отображения.
       </p>
@@ -53,18 +49,15 @@
       <hr />
 
       <div v-if="dataResults.length > 0" class="results-table-container">
-        <div class="table-scroll-wrapper"> 
+        <div class="table-scroll-wrapper">
           <table class="results-table">
             <thead>
               <tr>
-                <th v-for="field in fields" :key="field">
-                  {{ field }}
-                </th>
+                <th v-for="field in fields" :key="field">{{ field }}</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, index) in dataResults" :key="row.pkValue || index">
-                
+              <tr v-for="(row, index) in paginatedResults" :key="row.pkValue || index">
                 <td
                   v-for="field in fields"
                   :key="field"
@@ -76,42 +69,54 @@
                     :name="field"
                     :value="getInputValue(row.data, field)"
                     @input="onInput(row, field, $event)"
-                    :class="{'modified': row.isModified[field]}"
+                    :class="{ modified: row.isModified[field] }"
                     :readonly="field.toLowerCase() === 'id'"
                     class="field-input-cell"
                   />
                 </td>
-                
               </tr>
             </tbody>
           </table>
         </div>
 
+        <!-- Пагинация -->
+        <div v-if="totalPages > 1" class="pagination-controls">
+          <button @click="prevPage" :disabled="currentPage === 1" class="pagination-button">
+            ← Назад
+          </button>
+
+          <span class="pagination-info">
+            Страница {{ currentPage }} из {{ totalPages }}
+          </span>
+
+          <button @click="nextPage" :disabled="currentPage === totalPages" class="pagination-button">
+            Вперёд →
+          </button>
+        </div>
+
         <hr class="update-separator" />
-        
+
         <div class="global-update-actions">
-          <button 
-            @click="updateAllModifiedRows" 
+          <button
+            @click="updateAllModifiedRows"
             :disabled="!hasAnyModifications || isGlobalUpdating"
             class="submit-button global-update-button"
           >
             {{ isGlobalUpdating ? 'Обновление всех строк...' : 'Обновить все измененные строки' }}
           </button>
-          
+
           <div v-if="globalUpdateError" class="state-message error update-error">
             Ошибка при массовом обновлении: {{ globalUpdateError }}
           </div>
-          
+
           <div v-if="globalUpdateSuccess > 0" class="state-message success update-success">
             Успешно обновлено строк: {{ globalUpdateSuccess }}
           </div>
         </div>
       </div>
-      
-      <div v-else-if="submitted && dataResults.length === 0 && !submitting">
-          <p class="state-message info">
-            По вашему запросу строк не найдено.
-          </p>
+
+      <div v-else-if="submitted && dataResults.length === 0 && !submitting" class="state-message info">
+        По вашему запросу строк не найдено.
       </div>
 
       <div v-if="submitError" class="state-message error">
@@ -121,8 +126,9 @@
   </div>
 </template>
 
+
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { useRoute } from 'vue-router';
 
@@ -131,160 +137,151 @@ const tableName = route.params.tableName;
 
 const fields = ref([]);
 const pkField = ref(null);
-const loading = ref(true); 
-const error = ref(null); 
+const loading = ref(true);
+const error = ref(null);
 
-const filterCriteria = ref({}); 
+const filterCriteria = ref({});
 const dataResults = ref([]);
-const submitting = ref(false); 
-const submitted = ref(false); 
-const submitError = ref(null); 
+const submitting = ref(false);
+const submitted = ref(false);
+const submitError = ref(null);
 
 const hasAnyModifications = ref(false);
 const isGlobalUpdating = ref(false);
 const globalUpdateError = ref(null);
 const globalUpdateSuccess = ref(0);
 
-const BASE_URL = 'http://localhost:8000/db/'; 
-const SEARCH_URL = `${BASE_URL}get_rows/${tableName}/`; 
-const UPDATE_URL = `${BASE_URL}update_row/${tableName}/`; 
+const currentPage = ref(1);
+const rowsPerPage = 100;
+
+const BASE_URL = 'http://localhost:8000/db/';
+const SEARCH_URL = `${BASE_URL}get_rows/${tableName}/`;
+const UPDATE_URL = `${BASE_URL}update_row/${tableName}/`;
 
 const enrichRow = (rowData) => {
-    const enriched = {
-        data: rowData,
-        originalData: { ...rowData },
-        pkValue: rowData[pkField.value], 
-        isModified: {}, 
-        hasModifications: false, 
-    };
-    
-    fields.value.forEach(field => {
-        enriched.isModified[field] = false; 
-    });
-    return enriched;
+  const enriched = {
+    data: rowData,
+    originalData: { ...rowData },
+    pkValue: rowData[pkField.value],
+    isModified: {},
+    hasModifications: false,
+  };
+  fields.value.forEach(field => {
+    enriched.isModified[field] = false;
+  });
+  return enriched;
 };
 
 const checkColumnIndex = ref(-1);
 
 const fetchSchema = async () => {
   const SCHEMA_URL = `${BASE_URL}get_table_info/${tableName}/`;
-
   try {
     const response = await axios.get(SCHEMA_URL);
-    
     const allFields = response.data[tableName];
-    
     if (Array.isArray(allFields) && allFields.length > 0) {
-        pkField.value = allFields[0]; 
-        fields.value = allFields; 
-        checkColumnIndex.value = fields.value.findIndex(field => 
-          field.toLowerCase() === 'проверено'
-        );
+      pkField.value = allFields[0];
+      fields.value = allFields;
+      checkColumnIndex.value = fields.value.findIndex(field => field.toLowerCase() === 'проверено');
     } else {
-        fields.value = [];
-        pkField.value = null; 
-        checkColumnIndex.value = -1;
+      fields.value = [];
+      pkField.value = null;
     }
-    
     fields.value.forEach(field => {
-        filterCriteria.value[field] = '';
+      filterCriteria.value[field] = '';
     });
-    
-    } catch (err) {
-    error.value = `Не удалось загрузить схему таблицы. Ошибка: ${err.message}`;
+  } catch (err) {
+    error.value = `Не удалось загрузить схему таблицы: ${err.message}`;
   } finally {
     loading.value = false;
   }
 };
 
 const submitData = async () => {
-    
-    submitting.value = true;
-    submitted.value = true;
-    submitError.value = null;
-    dataResults.value = [];
-    hasAnyModifications.value = false;
+  submitting.value = true;
+  submitted.value = true;
+  submitError.value = null;
+  dataResults.value = [];
+  hasAnyModifications.value = false;
+  currentPage.value = 1;
 
-    const queryPayload = Object.keys(filterCriteria.value).reduce((acc, key) => {
-        const value = filterCriteria.value[key];
-        if (value && value.trim() !== '') {
-            acc[key] = value.trim(); 
-        }
-        return acc;
-    }, {});
-    
-    try {
-        const response = await axios.post(SEARCH_URL, queryPayload);
-
-        
-        const structuredRows = response.data.rows || response.data; 
-        
-        if (!Array.isArray(structuredRows) || fields.value.length === 0) {
-             throw new Error("Неверный формат данных от сервера или отсутствует схема таблицы.");
-        }
-
-        const restructuredRows = [];
-        const fieldNames = fields.value;
-        const expectedColumns = fieldNames.length;
-        
-        for (const flatRow of structuredRows) {
-            
-            if (!Array.isArray(flatRow) || flatRow.length !== expectedColumns) {
-                console.warn('Пропущена строка из-за несовпадения количества столбцов:', flatRow);
-                continue; 
-            }
-
-            const rowData = {};
-            
-            for (let j = 0; j < expectedColumns; j++) {
-                const fieldName = fieldNames[j];
-                const fieldValue = flatRow[j];
-                
-                rowData[fieldName] = (fieldValue === null || fieldValue === undefined) ? '' : String(fieldValue); 
-            }
-            
-            restructuredRows.push(enrichRow(rowData));
-        }
-        
-        dataResults.value = restructuredRows;
-        
-    } catch (err) {
-        submitError.value = `Нет ни одной строки удволетворяющих запросу`;
-    } finally {
-        submitting.value = false;
+  const queryPayload = Object.keys(filterCriteria.value).reduce((acc, key) => {
+    const value = filterCriteria.value[key];
+    if (value && value.trim() !== '') {
+      acc[key] = value.trim();
     }
+    return acc;
+  }, {});
+
+  try {
+    const response = await axios.post(SEARCH_URL, queryPayload);
+    const structuredRows = response.data.rows || response.data;
+
+    if (!Array.isArray(structuredRows) || fields.value.length === 0) {
+      throw new Error("Неверный формат данных.");
+    }
+
+    const restructuredRows = structuredRows.map(flatRow => {
+      if (!Array.isArray(flatRow) || flatRow.length !== fields.value.length) {
+        console.warn('Некорректная строка:', flatRow);
+        return null;
+      }
+      const rowData = {};
+      fields.value.forEach((field, i) => {
+        rowData[field] = flatRow[i] == null ? '' : String(flatRow[i]);
+      });
+      return enrichRow(rowData);
+    }).filter(Boolean);
+
+    dataResults.value = restructuredRows;
+
+  } catch (err) {
+    submitError.value = 'Нет строк, удовлетворяющих запросу.';
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// Вычисляем отображаемые строки
+const paginatedResults = computed(() => {
+  const start = (currentPage.value - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  return dataResults.value.slice(start, end);
+});
+
+// Общее количество страниц
+const totalPages = computed(() => {
+  return Math.ceil(dataResults.value.length / rowsPerPage) || 1;
+});
+
+// Управление страницами
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const prevPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
 };
 
 const getInputValue = (data, field) => {
-  const fieldName = field.toLowerCase();
-  const value = data[field];
-
-  if (fieldName === 'проверено' && value === 'у') {
-    return '+'; // "у" → показываем как "+"
+  if (field.toLowerCase() === 'проверено' && data[field] === 'у') {
+    return '+';
   }
-
-  return value;
+  return data[field];
 };
 
 const onInput = (row, field, event) => {
-  // ✅ Блокируем любое поле с именем 'id' (регистронезависимо)
-  if (field.toLowerCase() === 'id') {
-    return;
-  }
+  if (field.toLowerCase() === 'id') return;
 
   const newValue = event.target.value.trim();
   const fieldName = field.toLowerCase();
 
   if (fieldName === 'проверено') {
-    const originalValue = row.originalData[field];
-
-    if (['з', 'З'].includes(originalValue) && newValue === '+') {
-      row.data[field] = 'у';
-    } else if (newValue === '+') {
-      row.data[field] = 'у';
-    } else {
-      row.data[field] = newValue;
-    }
+    row.data[field] = newValue === '+' ? 'у' : newValue;
   } else {
     row.data[field] = newValue;
   }
@@ -293,89 +290,60 @@ const onInput = (row, field, event) => {
 };
 
 const markAsModified = (row, fieldName) => {
-    if (!row.isModified[fieldName]) {
-        row.isModified[fieldName] = true; 
-        row.hasModifications = true; 
-        
-        hasAnyModifications.value = true;
-    }
-    globalUpdateError.value = null;
-    globalUpdateSuccess.value = 0; 
+  if (!row.isModified[fieldName]) {
+    row.isModified[fieldName] = true;
+    row.hasModifications = true;
+    hasAnyModifications.value = true;
+  }
+  globalUpdateError.value = null;
+  globalUpdateSuccess.value = 0;
 };
 
 const updateAllModifiedRows = async () => {
-    if (!hasAnyModifications.value || isGlobalUpdating.value || !pkField.value) {
-        return; 
+  if (!hasAnyModifications.value || isGlobalUpdating.value || !pkField.value) return;
+
+  isGlobalUpdating.value = true;
+  const promises = [];
+  const modifiedRows = [];
+
+  dataResults.value.forEach(row => {
+    if (row.hasModifications) {
+      const updates = {};
+      fields.value.forEach(f => {
+        if (row.isModified[f]) updates[f] = row.data[f];
+      });
+      promises.push(axios.patch(UPDATE_URL, {
+        row_pk: String(row.pkValue),
+        updates
+      }));
+      modifiedRows.push(row);
     }
-isGlobalUpdating.value = true;
-    globalUpdateError.value = null;
-    globalUpdateSuccess.value = 0;
+  });
 
-    const updatePromises = [];
-    const modifiedRows = [];
+  if (promises.length === 0) {
+    isGlobalUpdating.value = false;
+    return;
+  }
 
-    dataResults.value.forEach(row => {
-        if (row.hasModifications) {
-            const updates = {};
-            fields.value.forEach(field => {
-                if (row.isModified[field]) {
-                    updates[field] = row.data[field];
-                }
-            });
-            
-            const singleUpdatePayload = {
-                row_pk: String(row.pkValue),
-                updates: updates
-            };
-
-            const promise = axios.patch(UPDATE_URL, singleUpdatePayload);
-            
-            updatePromises.push(promise);
-            modifiedRows.push(row);
-        }
-    });
-
-    if (updatePromises.length === 0) {
-        isGlobalUpdating.value = false;
-        return;
-    }
-
-    try {
-        const results = await Promise.allSettled(updatePromises);
-        
-        let successfulUpdates = 0;
-        let failedUpdates = 0;
-        
-        results.forEach((result, index) => {
-            const row = modifiedRows[index];
-            
-            if (result.status === 'fulfilled') {
-                fields.value.forEach(field => {
-                    row.isModified[field] = false;
-                });
-                row.hasModifications = false;
-                successfulUpdates++;
-            } else {
-                failedUpdates++;
-                console.error( `Ошибка обновления строки ${row.pkValue}: `, result.reason);
-            }
+  try {
+    const results = await Promise.allSettled(promises);
+    let success = 0;
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled') {
+        Object.keys(modifiedRows[i].isModified).forEach(f => {
+          modifiedRows[i].isModified[f] = false;
         });
-        
-        globalUpdateSuccess.value = successfulUpdates;
-        
-        if (failedUpdates > 0) {
-            globalUpdateError.value =  `Обновлено ${successfulUpdates} строк. Ошибка при обновлении ${failedUpdates} строк. Недопустимое значение.`;
-        } else {
-            hasAnyModifications.value = false;
-        }
-        
-        hasAnyModifications.value = dataResults.value.some(row => row.hasModifications);
-
-    } catch (error) {
-        globalUpdateError.value = `Критическая ошибка при отправке запросов: ${error.message}`;
-    } finally {
-        isGlobalUpdating.value = false;
-    }
+        modifiedRows[i].hasModifications = false;
+        success++;
+      }
+    });
+    globalUpdateSuccess.value = success;
+    hasAnyModifications.value = dataResults.value.some(r => r.hasModifications);
+  } catch (err) {
+    globalUpdateError.value = 'Ошибка: ' + err.message;
+  } finally {
+    isGlobalUpdating.value = false;
+  }
 };
 
 onMounted(() => {
@@ -383,19 +351,15 @@ onMounted(() => {
 });
 </script>
 
-
 <style scoped>
-
 :root {
   --primary: #1C7C54;
   --primary-dark: #1A5D43;
   --bg-page: #F8F9FA;
   --bg-card: #ffffff;
   --bg-input: #fcfcfc;
-  --border: #ddd;
   --text-primary: #2C3E50;
   --text-secondary: #6C757D;
-  --text-muted: #aaa;
   --error: #d32f2f;
   --success: #28a745;
 }
@@ -437,7 +401,7 @@ h1 {
 .state-message.info,
 .state-message.loading {
   background-color: var(--bg-card);
-  border: 1px dashed var(--text-muted);
+  border: 1px dashed var(--text-secondary);
   color: var(--text-secondary);
 }
 
@@ -447,55 +411,57 @@ h1 {
   border: 1px solid #f5c6cb;
 }
 
-/* Форма поиска — теперь как отдельная секция */
+/* Форма поиска */
 .data-entry-form {
   background-color: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 25px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-.data-table-layout {
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-  background-color: var(--bg-input);
-}
-
-.flex-row {
-  display: flex;
+/* Таблица фильтров */
+.filter-table {
+  display: table;
   width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  background-color: var(--bg-input);
+  min-width: 800px;
 }
 
-.header-row {
-  background-color: transparent;
-  border-bottom: 2px solid var(--border);
+.filter-table-row {
+  display: table-row;
+}
+
+.filter-table-cell {
+  display: table-cell;
+  padding: 10px 8px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  box-sizing: border-box;
+  vertical-align: top;
 }
 
 .header-cell {
-  flex: 1;
-  padding: 10px 8px;
-  text-align: center;
   font-size: 0.9em;
   font-weight: 500;
-  color: var(--text-muted); /* ✅ Бледный цвет заголовков */
-  text-transform: none;
-  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  background-color: transparent;
+  border-bottom: 2px solid #ddd;
 }
 
 .input-cell {
-  flex: 1;
   padding: 6px 8px;
-  border-bottom: 1px solid var(--border);
   background-color: white;
+  border-bottom: 1px solid #ddd;
 }
 
 .field-input-cell {
   width: 100%;
   padding: 10px 8px;
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
   border-radius: 4px;
   box-sizing: border-box;
   text-align: center;
@@ -510,7 +476,7 @@ h1 {
   box-shadow: 0 0 0 3px rgba(28, 124, 84, 0.1);
 }
 
-/* Маленькая кнопка поиска — слева над таблицей */
+/* Кнопка поиска */
 .submit-button {
   display: inline-flex;
   padding: 8px 14px;
@@ -537,7 +503,7 @@ h1 {
   cursor: not-allowed;
 }
 
-/* Контейнер для кнопок над таблицей */
+/* Контейнер для кнопки поиска */
 .table-controls {
   display: flex;
   justify-content: space-between;
@@ -550,33 +516,10 @@ h1 {
   margin: 0;
 }
 
-.global-update-button {
-  padding: 8px 14px;
-  background-color: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.95em;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.global-update-button:hover:not(:disabled) {
-  background-color: var(--primary-dark);
-}
-
-.global-update-button:disabled {
-  background-color: #94d3a2;
-  color: #fff;
-  cursor: not-allowed;
-}
-
-/* Блок с результатами — как отдельная секция */
+/* Блок с результатами */
 .results-table-container {
   background-color: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -586,7 +529,8 @@ h1 {
   overflow-x: auto;
   margin-top: 12px;
   border-radius: 6px;
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
+  -webkit-overflow-scrolling: touch;
 }
 
 .results-table {
@@ -599,18 +543,18 @@ h1 {
 
 .results-table th {
   background-color: transparent;
-  color: var(--text-muted); /* ✅ Бледный цвет заголовков */
+  color: var(--text-secondary);
   font-weight: 500;
   font-size: 0.9em;
   padding: 10px 8px;
   text-align: center;
-  border-bottom: 2px solid var(--border);
+  border-bottom: 2px solid #ddd;
   letter-spacing: 0.5px;
 }
 
 .results-table td {
   padding: 0;
-  border: 1px solid var(--border);
+  border: 1px solid #ddd;
   text-align: center;
   font-size: 0.95em;
 }
@@ -641,7 +585,7 @@ h1 {
   border-radius: 4px;
 }
 
-/* id-столбец — серый и неактивный */
+/* Столбец ID — неактивный */
 .result-cell-input.id-cell {
   background-color: #fafafa;
   color: var(--text-secondary);
@@ -677,69 +621,40 @@ h1 {
   border: 1px solid #a3d9b1;
 }
 
-
-.table-scroll-wrapper {
-  overflow-x: auto;
-  margin-top: 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Новая таблица для фильтров — без flex */
-.filter-table {
-  display: table;
-  width: 100%;
-  table-layout: auto; /* или fixed, если нужно жёсткое управление */
-  border-collapse: collapse;
-  background-color: var(--bg-input);
-  min-width: 800px; /* как у results-table */
-}
-
-.filter-table-row {
-  display: table-row;
-}
-
-.filter-table-cell {
-  display: table-cell;
-  padding: 10px 8px;
-  text-align: center;
-  border-bottom: 1px solid var(--border);
-  box-sizing: border-box;
-  vertical-align: top;
-}
-
-/* Заголовки */
-.header-cell {
-  font-size: 0.9em;
-  font-weight: 500;
-  color: var(--text-muted);
-  background-color: transparent;
-  border-bottom: 2px solid var(--border);
-}
-
-/* Поля ввода */
-.input-cell {
-  padding: 6px 8px;
-  background-color: white;
-}
-
-.field-input-cell {
-  width: 100%;
-  padding: 10px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  box-sizing: border-box;
-  text-align: center;
+/* Пагинация */
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
   font-size: 0.95em;
-  background-color: white;
-  transition: border-color 0.2s;
+  color: var(--text-secondary);
 }
 
-.field-input-cell:focus {
-  border-color: var(--primary);
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(28, 124, 84, 0.1);
+.pagination-button {
+  padding: 8px 16px;
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
+.pagination-button:hover:not(:disabled) {
+  background-color: var(--primary-dark);
+}
+
+.pagination-button:disabled {
+  background-color: #94d3a2;
+  cursor: not-allowed;
+  color: #fff;
+}
+
+.pagination-info {
+  font-weight: 500;
+  color: var(--text-primary);
+}
 </style>
