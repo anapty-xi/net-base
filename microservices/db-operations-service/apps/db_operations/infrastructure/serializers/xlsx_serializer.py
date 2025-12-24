@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import UploadedFile
 
 class XLSXSerializer:
     '''
-    преобразует столбцы и строки таблицы в xlxs в байтах
+    сериализует и дессериализует столбцы и строки таблицы в xlxs в байтах
     '''
     def unserialize(self, file: UploadedFile) -> Dict[str, str | List[str] | List[List[str]]]:
         if not file.name.endswith('.xlsx'):

@@ -4,6 +4,9 @@ from typing import Optional
 
 @dataclass
 class User:
+    '''
+    Сущность юзер для слоя бизнес-логики
+    '''
     is_active: bool
     is_staff: bool     
     id: Optional[int] = None

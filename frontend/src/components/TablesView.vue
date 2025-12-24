@@ -46,7 +46,11 @@
       <router-link to="/report" class="report-button small-button">
         Отчёт
       </router-link>
-      <button @click="showUploadForm = !showUploadForm" class="create-button small-button">
+      <button 
+        v-if="isStaff"
+        @click="showUploadForm = !showUploadForm" 
+        class="create-button small-button"
+      >
         {{ showUploadForm ? 'Отмена' : 'Создать таблицу' }}
       </button>
     </div>

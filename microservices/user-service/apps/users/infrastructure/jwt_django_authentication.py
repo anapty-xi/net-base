@@ -5,7 +5,11 @@ from ..models import User as DjangoUser
 from rest_framework_simplejwt.tokens import RefreshToken
 from datetime import datetime
 
+
 class JWTAuthentication:
+    '''
+    Функции для работы с jwt tokens
+    '''
     def authenticate(self, username: str, password: str) -> Optional[User]:
         django_user = authenticate(username=username, password=password)
         if not django_user:

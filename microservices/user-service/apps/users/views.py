@@ -17,13 +17,15 @@ logger = logging.getLogger(__name__)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    '''вход пользователя: отправка accsess, refresh токинов'''
+    '''
+    вход пользователя: отправка accsess, refresh токинов
+    '''
 
     username = request.data.get('username')
     password = request.data.get('password')
 
     if not username or not password:
-        logger.error(f'Input data is not defined')
+        logger.error(f'login/ input data is not defined')
         return Response(
             {'error': 'Юзернейм и пароль необходимы для входа'},
             status=status.HTTP_400_BAD_REQUEST
@@ -31,10 +33,9 @@ def login_view(request):
     auth_infrastructure = JWTAuthentication()
     user = LoginUser(auth_infrastructure).execute(username, password)
     if user:
-        logger.info('User login')
+        logger.info('login/ User login')
         refresh, access = CreateTokens(auth_infrastructure).execute(user)
         if refresh:
-            logger.info('User login')
             return Response ({
                 'access': access,
                 'refresh': refresh,
@@ -43,7 +44,7 @@ def login_view(request):
                     'username': user.username,
                 }
             })
-    logger.info(f'{username}, {password} are invalid data')
+    logger.info(f'login/ {username}, {password} are invalid data')
     return Response(
         {'error', 'Неверные учетные данные'},
         status=status.HTTP_401_UNAUTHORIZED
@@ -53,21 +54,25 @@ def login_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def refresh_token(request):
-    '''отправка новых refresh, accsess токенов по refresh токену пользователя'''
-
+    '''
+    отправка новых refresh, accsess токенов по refresh токену пользователя
+    '''
     try:
         refresh_token = request.data.get('refresh')
         if not refresh_token:
+            logger.error('refresh_token/ no refresh')
             return Response(
                 {'error': 'Токен обновления обязателен'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         token_infrastructure = JWTAuthentication()
         access = RefreshToken(token_infrastructure).execute(refresh_token)
+        logger.info('refresh_token/ new tokens sent')
         return Response ({
             'access': str(access)
         })
     except Exception as e:
+        logger.error('refresh_token/ refresh timeout')
         return Response (
             {'error': str(e)},
             status=status.HTTP_401_UNAUTHORIZED
@@ -75,11 +80,13 @@ def refresh_token(request):
     
 
 class UserView(generics.RetrieveAPIView):
-    '''отправка данных пользователя, если предоставлен access токен'''
+    '''
+    отправка данных пользователя, если предоставлен access токен
+    '''
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
         print(f'client got user data\n {self.request.user}')
-        logger.info(f'client got user data\n {self.request.user}')
+        logger.info(f'userview/ client got user data {self.request.user}')
         return self.request.user

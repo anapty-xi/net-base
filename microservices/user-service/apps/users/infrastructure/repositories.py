@@ -3,6 +3,9 @@ from ..models import User as DjangoUser
 from entities.user import User as DomainUser
 
 class DjangoUserRepository:
+    '''
+    Создание пользователей для бд
+    '''
     def save(self, user: DomainUser) -> DomainUser:
         if user.id:
             django_user = DjangoUser.objects.get(id=user.id)

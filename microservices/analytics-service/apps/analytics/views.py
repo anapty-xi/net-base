@@ -32,7 +32,7 @@ def get_report(request):
     usecase = MakeReport(reporter)
     try:
         report = usecase.execute(date)
-        logger.info(f'reports {report}')
+        logger.info(f'reports {len(report)}')
     except Exception as e:
         return Response(
             {'error': str(e)},
@@ -40,11 +40,11 @@ def get_report(request):
         )
     
     if report:
-        logger.info(f'response\n\n!!!{[json.loads(table_report.json()) for table_report in report]}\n\n!!!\n\n')
         return Response(
             [json.loads(table_report.json()) for table_report in report],
             status=status.HTTP_200_OK
         )
+    logger.info('нет репортов на эту дату')
     return Response(
         {'error': 'no reports'},
         status=status.HTTP_404_NOT_FOUND

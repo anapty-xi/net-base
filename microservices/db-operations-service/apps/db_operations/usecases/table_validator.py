@@ -29,11 +29,13 @@ class TableValidator:
         if check_index:
             for index, row in enumerate(table.rows):
                 if row[check_index] not in ['+', 'з', 'З', '']: 
+                    logger.error(f'Строка {index} содержит недопустимое значение "{row[check_index]}" для столбца')
                     raise ValueError(f'Строка {index} содержит недопустимое значение "{row[check_index]}" для столбца. Допустимые значения - "з" "з" "+"')
         else:
             table.cols.append('Проверено')
             for row in table.rows:
                 row.append('')
+            logger.info(f'столбец "проверено" был добавлен в таблицу {table.title}')
         return table
 
     def _has_date(self, table: Table) -> Table:
@@ -50,11 +52,13 @@ class TableValidator:
                     date.fromisoformat(f'{year}-{month}-{day}')
                     table.rows[index][date_index] = f'{day}.{month}.{year}'
                 except ValueError:
+                    logger.error(f'Строка {index} содержит недопустимое значение {row[date_index]} для стобца')
                     raise ValueError(f'Строка {index} содержит недопустимое значение {row[date_index]} для стобца. Допустимые значения - в формате year.month.day')
         else:
             table.cols.append('Дата')
             for row in table.rows:
                 row.append('')
+            logger.info(f'столбец "дата" был добавлен в таблицу {table.title}')
         return table
 
     def _has_note(self, table: Table) -> Table:
@@ -66,6 +70,7 @@ class TableValidator:
             table.cols.append('Примечание')
             for row in table.rows:
                 row.append('')
+            logger.info(f'столбец "примечание" был добавлен в таблицу {table.title}')
         return table
     
     def validate_table(self, table: Table) -> Table:
@@ -85,8 +90,11 @@ class UpdatesValidator(): #TODO: в таблицу модет не быть эт
     '''
     def cheked_field_validation(self, table_cols: List[str], **updates) -> Dict[str, str]:
         table_cols_lower = list(map(lambda col: col.lower(), table_cols))
-        check_field = table_cols[table_cols_lower.index('проверено')]
-        date_field = table_cols[table_cols_lower.index('дата')]
+        try:
+            check_field = table_cols[table_cols_lower.index('проверено')]
+            date_field = table_cols[table_cols_lower.index('дата')]
+        except:
+            return updates
 
         if check_field in updates.keys():
             if updates[check_field] not in ['+', 'з', 'З', '', 'у']:

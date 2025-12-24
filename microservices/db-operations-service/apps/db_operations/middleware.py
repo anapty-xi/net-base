@@ -16,6 +16,7 @@ class JWTAuthenticationMiddleware:
         if request.path in ['/health/', '/admin/']:
             return self.get_response(request)
         if request.headers.get('X-API-Key') == settings.API_KEY:
+            logger.info('запрос от аналитики')
             return self.get_response(request)
             
         

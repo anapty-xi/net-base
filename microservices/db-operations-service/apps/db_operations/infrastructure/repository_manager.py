@@ -1,3 +1,5 @@
+import logging
+
 from config.pool import DB_ENGINE
 from ..entities.table import Table as EntityTable
 from sqlalchemy.schema import Table, Column
@@ -7,6 +9,8 @@ from sqlalchemy import MetaData, String, insert, update, select, Integer
 from typing import List, Dict
 
 metadata_obj = MetaData()
+
+logger = logging.getLogger(__name__)
 
 class RepositoryManager(TableGateway):
     '''
@@ -21,31 +25,33 @@ class RepositoryManager(TableGateway):
         try:  
             return Table(title, metadata_obj, autoload_with=self.engine)
         except:
+            logger.error(f'Таблицы {title} не существует')
             raise Exception(f'Таблицы {title} не существует')
 
     def create_table(self, table: EntityTable) -> bool:
         '''
         Создвние таблицы и заполнение ее данными
         '''
-        #try:
-        columns = [Column(col, String, nullable=True) for col in table.cols]
-        columns.insert(0, Column('id', Integer, primary_key=True, autoincrement=True))
-        user_table = Table(
-            table.title,
-            metadata_obj,
-            *columns
-        )
-        metadata_obj.create_all(self.engine)
+        try:
+            columns = [Column(col, String, nullable=True) for col in table.cols]
+            columns.insert(0, Column('id', Integer, primary_key=True, autoincrement=True))
+            user_table = Table(
+                table.title,
+                metadata_obj,
+                *columns
+            )
+            metadata_obj.create_all(self.engine)
 
-        data = [
-            {col: row[i] for i, col in enumerate(table.cols)}
-            for row in table.rows
-        ]
-        with self.engine.begin() as connection:
-            connection.execute(insert(user_table), data)
-        return True
-        # except:
-        #     return False
+            data = [
+                {col: row[i] for i, col in enumerate(table.cols)}
+                for row in table.rows
+            ]
+            with self.engine.begin() as connection:
+                connection.execute(insert(user_table), data)
+            return True
+        except Exception as e:
+            logger.critical(f'во время создания таблицы произошла ошибка\n{e}')
+            return False
 
 
 
@@ -75,7 +81,8 @@ class RepositoryManager(TableGateway):
             try:
                 connection.execute(stmt)
                 return True
-            except:
+            except Exception as e:
+                logger.critical(f'во время обновления значений произошла ошибка\n{e}')
                 return False
     
     def delete_table(self, title: str) -> bool:
@@ -98,6 +105,7 @@ class RepositoryManager(TableGateway):
         if query_params:
             for col in query_params:
                 if col not in table_cols:
+                    logger.error(f'Столбец {col} не является столбцом таблицы {title}')
                     raise ValueError(f'Столбец {col} не является столбцом таблицы {title}')            
             for col, val in query_params.items():
                 stmt = stmt.where(table.columns[col] == val)

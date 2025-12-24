@@ -1,5 +1,9 @@
+import logging
+
 from rest_framework.permissions import BasePermission
 from django.conf import settings
+
+logger= logging.getLogger(__name__)
 
 class IsAuthenticatedCustom(BasePermission):
     '''
@@ -12,7 +16,8 @@ class IsAuthenticatedCustom(BasePermission):
         api_key =  request.headers.get('X-API-Key')
         if api_key == settings.API_KEY:
             return True
-        return True
+        logger.error('unauth request')
+        return False
     
 class IsAdminCustom(BasePermission):
     '''
