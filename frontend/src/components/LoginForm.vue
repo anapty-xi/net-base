@@ -26,7 +26,7 @@ import axios from 'axios';
 import { useRouter } from 'vue-router';
 import { logout } from '@/utils/auth';
 
-const LOGIN_URL = 'http://localhost:8000/user/login/';
+const LOGIN_URL = 'http://127.0.0.1:8000/user/login/';
 const router = useRouter();
 
 const credentials = reactive({

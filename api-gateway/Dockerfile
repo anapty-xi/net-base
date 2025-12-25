@@ -1,9 +1,13 @@
 FROM python:latest
 
-WORKDIR /base-gate
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
-RUN pip install -r requirements.txt
+WORKDIR /gate
 
-COPY . .
+COPY requirements.txt /gate/
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["gunicorn", "congig.wsgi:application", "-b", "127.0.0.1:8000", "--workers", "2"]
+COPY . /gate/
+
+CMD ["gunicorn", "config.wsgi:application", "-b", "0.0.0.0:8000", "--workers", "2"]

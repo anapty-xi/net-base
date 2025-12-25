@@ -1,6 +1,9 @@
 import pathlib
+import os
 import pandas as pd
 from datetime import datetime
+from dotenv import load_dotenv
+load_dotenv()
 
 from logging import getLogger
 from config.celery import app
@@ -10,7 +13,7 @@ from .infrastructure.repository_manager import RepositoryManager
 
 logger = getLogger(__name__)
 
-@app.task
+@app.task(queue='db')
 def db_dump():
     from config.pool import DB_ENGINE
     schema_repository_manager = RepositoryManager(DB_ENGINE)
@@ -18,7 +21,7 @@ def db_dump():
 
     tables_schemas = schema_usecase.execute()
     if tables_schemas:
-        path = pathlib.Path(f'{pathlib.Path.home()}/db_dumps/{str(datetime.now().date())}')
+        path = pathlib.Path(f'{os.getenv("EXPORT_PATH")}/{str(datetime.now().date())}')
         path.mkdir(parents=True, exist_ok=True)
         for title, cols in tables_schemas.items():
             rows_repository_manager = RepositoryManager(DB_ENGINE)
@@ -26,12 +29,12 @@ def db_dump():
             rows = rows_usecase.execute(title, None)
 
             df = pd.DataFrame(rows, columns=cols)
-            file_path = path / 'title.xsxl'
+            file_path = path / f'{title}.xlsx'
             df.to_excel(file_path, index=False)
             logger.info(f'таблица {title} была сохрынена в fs')
 
 
             
-    
-    logger.error('Небыло сохранено ни одной таблицы')
+    else:
+        logger.error('Небыло сохранено ни одной таблицы')
 

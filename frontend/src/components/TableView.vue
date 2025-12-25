@@ -154,7 +154,7 @@ const globalUpdateSuccess = ref(0);
 const currentPage = ref(1);
 const rowsPerPage = 100;
 
-const BASE_URL = 'http://localhost:8000/db/';
+const BASE_URL = 'http://127.0.0.1:8000/db/';
 const SEARCH_URL = `${BASE_URL}get_rows/${tableName}/`;
 const UPDATE_URL = `${BASE_URL}update_row/${tableName}/`;
 

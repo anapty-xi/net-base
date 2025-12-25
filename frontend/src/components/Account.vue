@@ -27,7 +27,7 @@ import { useRouter } from 'vue-router';
 import user_placeholder from '../assets/user_placeholder.png';
 
 
-const USER_URL = 'http://localhost:8000/user/user/'; 
+const USER_URL = 'http://127.0.0.1:8000/user/user/'; 
 const username = ref('загрузка...');
 const router = useRouter();
 

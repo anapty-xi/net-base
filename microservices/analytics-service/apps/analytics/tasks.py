@@ -1,5 +1,6 @@
 import logging
 
+
 from config.celery import app
 from .usecases.table_report_usecases import MakeReport
 from .infrastructure.reporter import Reporter
@@ -7,11 +8,11 @@ from .models import Report
 
 logger = logging.getLogger(__name__)
 
-@app.task
+@app.task(queue='analytics')
 def save_report():
     reporter = Reporter()
     usecase = MakeReport(reporter)
-    reports = usecase.execute()
+    reports = usecase.execute(None)
     if reports:
         for entity_report in reports:
             report_for_save = Report.objects.create(

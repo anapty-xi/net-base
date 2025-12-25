@@ -1,0 +1,152 @@
+version: '3.8'
+services:
+
+  user-service:
+    build: ./microservices/user-service
+    ports:
+      - "8001:8001"
+    volumes:
+      - user_db_data:/base-microservice/data
+      - static_volume:/var/html/static
+    env_file:
+      - ./microservices/user-service/.env
+    environment:
+      - STATIC_ROOT=/var/html/static 
+    networks:
+      - app-network
+
+  db-service:
+    build: ./microservices/db-operations-service
+    expose:
+      - "8002"
+    volumes:
+      - ./exported_tables:/base-microservice/exported_tables
+    env_file:
+      - ./microservices/db-operations-service/.env
+    depends_on:
+      - redis
+      - db_postgres 
+    networks:
+      - app-network
+
+  analytics-service:
+    build: ./microservices/analytics-service
+    ports:
+      - "8003"
+    volumes:
+      - anal_db_data:/base-microservice/data
+    env_file:
+      - ./microservices/analytics-service/.env
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  api-gateway:
+    build: ./api-gateway
+    expose:
+      - "8000"
+    env_file:
+      - ./api-gateway/.env
+    depends_on:
+      - user-service
+      - db-service
+      - analytics-service
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    expose:
+      - "8080"
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./static_volume:/var/html/static 
+    depends_on:
+      - api-gateway
+      - frontend
+    networks:
+      - app-network
+
+  celery_worker_db:
+    build: ./microservices/db-operations-service
+    command: celery -A config worker --loglevel=info -Q db
+    volumes:
+      - ./exported_tables:/base-microservice/exported_tables 
+    env_file:
+      - ./microservices/db-operations-service/.env
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  celery_worker_anal:
+    build: ./microservices/analytics-service
+    command: celery -A config worker --loglevel=info -Q analytics
+    volumes:
+      - anal_db_data:/base-microservice/data
+    env_file:
+      - ./microservices/db-operations-service/.env
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  celery_beat_db:
+    build: ./microservices/db-operations-service
+    command: celery -A config beat --loglevel=info
+    env_file:
+      - ./microservices/db-operations-service/.env
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  celery_beat_anal:
+    build: ./microservices/analytics-service
+    command: celery -A config beat --loglevel=info
+    env_file:
+      - ./microservices/analytics-service/.env
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+  db_postgres:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1247
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass Fish1247
+    ports:
+      - "6380:6379"
+    networks:
+      - app-network
+
+
+volumes:
+  user_db_data:
+  postgres_data: 
+  anal_db_data:
+  static_volume:
+
+networks:
+  app-network:
+    driver: bridge

@@ -89,7 +89,7 @@ const dateError = ref('');
 const displayedDate = ref('');
 
 // Конфигурация
-const BASE_URL = 'http://localhost:8000/';
+const BASE_URL = 'http://127.0.0.1:8000/';
 const REPORT_URL = `${BASE_URL}analytics/tables_report/`;
 
 // Форматирование даты в dd.mm.yyyy

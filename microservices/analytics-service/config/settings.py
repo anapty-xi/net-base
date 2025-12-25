@@ -4,13 +4,21 @@ from pathlib import Path
 from dotenv import load_dotenv
 load_dotenv()
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SECRET_KEY = str(os.getenv('SECRET_KEY'))
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "0.0.0.0",
+    "user-service",      
+    "db-service",
+    "analytics-service",
+    "api-gateway",
+]
 
 
 
@@ -59,7 +67,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'data', 'db.sqlite3')
     }
 }
 
@@ -122,6 +130,8 @@ USE_TZ = True
 
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
 
 USER_SERVICE_URL = str(os.getenv('USER_SERVICE_URL'))
 DB_OPERATIONS_SERVICE_URL = str(os.getenv('DB_OPERATIONS_SERVICE_URL'))

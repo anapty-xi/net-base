@@ -104,11 +104,11 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 // URLs
-const USER_INFO_URL = 'http://localhost:8000/user/user/';
-const DB_INFO_URL = 'http://localhost:8000/db/get_table_info/';
-const DB_CREATE_URL = 'http://localhost:8000/db/create/';
-const DB_DELETE_BASE_URL = 'http://localhost:8000/db/delete/';
-const DB_DOWNLOAD_URL = 'http://localhost:8000/db/table_file/';
+const USER_INFO_URL = 'http://127.0.0.1:8000/user/user/';
+const DB_INFO_URL = 'http://127.0.0.1:8000/db/get_table_info/';
+const DB_CREATE_URL = 'http://127.0.0.1:8000/db/create/';
+const DB_DELETE_BASE_URL = 'http://127.0.0.1:8000/db/delete/';
+const DB_DOWNLOAD_URL = 'http://127.0.0.1:8000/db/table_file/';
 
 // Реактивные данные
 const tables = ref([]);

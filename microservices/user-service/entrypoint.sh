@@ -1,5 +1,10 @@
-python manage.py migrate --noinput
+#!/bin/sh
 
-python manage.py collectstatic
+mkdir -p /var/html/static
+
+python manage.py migrate --noinput
+python manage.py collectstatic --noinput
+
+python admin.py
 
 exec "$@"
