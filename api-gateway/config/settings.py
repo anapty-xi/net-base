@@ -1,14 +1,14 @@
-
+import os
 
 from pathlib import Path
-import os
+from .get_secret import get_secret
 from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = str(os.getenv('SECRET_KEY'))
+SECRET_KEY = get_secret('GATE_SECRET_KEY')
 
 
 DEBUG = True

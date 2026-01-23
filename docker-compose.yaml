@@ -1,8 +1,7 @@
-version: '3.8'
 services:
 
   user-service:
-    build: ./microservices/user-service
+    image: user-service:latest
     ports:
       - "8001:8001"
     volumes:
@@ -12,53 +11,91 @@ services:
       - ./microservices/user-service/.env
     environment:
       - STATIC_ROOT=/var/html/static 
+      - ADMIN_PASSWORD=/run/secrets/admin_password
+      - API_KEY=/run/secrets/api_key
+      - SECRET_KEY=/run/secrets/user_secret_key
+    secrets:
+      - admin_password
+      - api_key
+      - user_secret_key
     networks:
       - app-network
 
   db-service:
-    build: ./microservices/db-operations-service
+    image: db-operatios-service:latest  
     expose:
       - "8002"
     volumes:
       - ./exported_tables:/base-microservice/exported_tables
     env_file:
       - ./microservices/db-operations-service/.env
+    environment:
+      - API_KEY=/run/secrets/api_key
+      - CELERY_BROCKER_URL=run/secrets/celery_brocker_url
+      - SECRET_KEY=run/secrets/db_secret_key
+      - DB_URL=run/secrets/db_url
+    secrets:
+      - celery_brocker_url
+      - api_key
+      - db_secret_key
+      - db_url
     depends_on:
-      - redis
-      - db_postgres 
+      celery_worker_db:
+        condition: service_started
+      db_postgres:
+        condition: service_healthy
     networks:
       - app-network
 
   analytics-service:
-    build: ./microservices/analytics-service
+    image: analytics-service:latest
     ports:
       - "8003"
     volumes:
       - anal_db_data:/base-microservice/data
     env_file:
       - ./microservices/analytics-service/.env
+    environment:
+      - API_KEY=/run/secrets/api_keyxt
+      - SECRET_KEY=run/secrets/analytics_secret_key
+    secrets:
+      - api_key
+      - analytics_secret_key
     depends_on:
-      - redis
+      db-service:
+        condition: service_healthy
+      celery_worker_anal:
+        condition: service_started
     networks:
       - app-network
 
   api-gateway:
-    build: ./api-gateway
+    image: api-gateway:latest
     expose:
       - "8000"
     env_file:
       - ./api-gateway/.env
+    environment:
+      - SECRET_KEY=run/secrets/gate_secret_key
+    secrets:
+      - gate_secret_key
     depends_on:
-      - user-service
-      - db-service
-      - analytics-service
+      user-service:
+        condition: service_healthy
+      db-service:
+        condition: service_healthy
+      analytics-service:
+        condition: service_healthy
     networks:
       - app-network
 
   frontend:
-    build: ./frontend
+    image: frontend:latest
     expose:
       - "8080"
+    depends_on:
+      api-gateway:
+       condition: service_healthy
     networks:
       - app-network
 
@@ -70,8 +107,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf
       - ./static_volume:/var/html/static 
     depends_on:
-      - api-gateway
-      - frontend
+      api-gateway:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -83,7 +120,8 @@ services:
     env_file:
       - ./microservices/db-operations-service/.env
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -95,7 +133,8 @@ services:
     env_file:
       - ./microservices/db-operations-service/.env
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -105,7 +144,8 @@ services:
     env_file:
       - ./microservices/db-operations-service/.env
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -115,7 +155,8 @@ services:
     env_file:
       - ./microservices/analytics-service/.env
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -126,19 +167,38 @@ services:
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1247
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_interval: 10s
+      start_period: 20s
 
   redis:
     image: redis:7-alpine
-    command: redis-server --requirepass Fish1247
+    command: >
+      sh -c 'redis-server --requirepass "$(cat /run/secrets/redis_password)"'
+    secrets:
+      - redis_password
     ports:
       - "6380:6379"
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_interval: 5s
+      start_period: 10s
 
 
 volumes:
@@ -150,3 +210,25 @@ volumes:
 networks:
   app-network:
     driver: bridge
+
+secrets:
+  admin_password:
+    file: ./secrets/admin_password.txt
+  analytics_secret_key:
+    file: ./secrets/analytics_secret_key.txt
+  api_key:
+    file: ./secrets/api_key.txt
+  celery_brocker_url:
+    file: ./secrets/celery_brocker_url.txt
+  db_secret_key:
+    file: ./secrets/db_secret_key.txt
+  db_url:
+    file: ./secrets/db_url.txt
+  gate_secret_key:
+    file: ./secrets/gate_secret_key.txt
+  user_secret_key:
+    file: ./secrets/user_secret_key.txt
+  db_password:
+    file: ./secrets/db_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt

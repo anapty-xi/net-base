@@ -2,6 +2,8 @@ __pycache__/
 
 migrations/
 
+secrets/
+
 *.sqlite3
 
 api-gateway/gate-venv
@@ -19,3 +21,9 @@ api-gateway/.env
 
 microservices/analytics-service/celerybeat-schedule
 microservices/db-operations-service/celerybeat-schedule
+api-gateway/.env
+exported_tables/2025-12-26/база.xlsx
+
+
+
+api-gateway/.env

@@ -31,10 +31,10 @@ def db_dump():
             df = pd.DataFrame(rows, columns=cols)
             file_path = path / f'{title}.xlsx'
             df.to_excel(file_path, index=False)
-            logger.info(f'таблица {title} была сохрынена в fs')
+            logger.info(f'db_dump/ {title} saved')
 
 
             
     else:
-        logger.error('Небыло сохранено ни одной таблицы')
+        logger.error('db_dump/ no tables saved')
 

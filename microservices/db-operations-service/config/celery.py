@@ -27,6 +27,6 @@ def shutdown_pool(**kwargs):
 app.conf.beat_schedule = {
     'db_dump': {
         'task': 'apps.db_operations.tasks.db_dump',
-        'schedule': 30.0#crontab(hour=23, minute=59)
+        'schedule': crontab(hour=23, minute=59)
     }
 }

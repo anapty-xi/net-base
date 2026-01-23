@@ -29,13 +29,13 @@ class TableValidator:
         if check_index:
             for index, row in enumerate(table.rows):
                 if row[check_index] not in ['+', 'з', 'З', '']: 
-                    logger.error(f'Строка {index} содержит недопустимое значение "{row[check_index]}" для столбца')
+                    logger.error(f'table_validator/ Строка {index} содержит недопустимое значение "{row[check_index]}" для столбца')
                     raise ValueError(f'Строка {index} содержит недопустимое значение "{row[check_index]}" для столбца. Допустимые значения - "з" "з" "+"')
         else:
             table.cols.append('Проверено')
             for row in table.rows:
                 row.append('')
-            logger.info(f'столбец "проверено" был добавлен в таблицу {table.title}')
+            logger.info(f'table_validator/ столбец "проверено" был добавлен в таблицу {table.title}')
         return table
 
     def _has_date(self, table: Table) -> Table:
@@ -52,13 +52,13 @@ class TableValidator:
                     date.fromisoformat(f'{year}-{month}-{day}')
                     table.rows[index][date_index] = f'{day}.{month}.{year}'
                 except ValueError:
-                    logger.error(f'Строка {index} содержит недопустимое значение {row[date_index]} для стобца')
+                    logger.error(f'table_validator/ Строка {index} содержит недопустимое значение {row[date_index]} для стобца')
                     raise ValueError(f'Строка {index} содержит недопустимое значение {row[date_index]} для стобца. Допустимые значения - в формате year.month.day')
         else:
             table.cols.append('Дата')
             for row in table.rows:
                 row.append('')
-            logger.info(f'столбец "дата" был добавлен в таблицу {table.title}')
+            logger.info(f'table_validator/ столбец "дата" был добавлен в таблицу {table.title}')
         return table
 
     def _has_note(self, table: Table) -> Table:
@@ -70,7 +70,7 @@ class TableValidator:
             table.cols.append('Примечание')
             for row in table.rows:
                 row.append('')
-            logger.info(f'столбец "примечание" был добавлен в таблицу {table.title}')
+            logger.info(f'table_validator/ столбец "примечание" был добавлен в таблицу {table.title}')
         return table
     
     def validate_table(self, table: Table) -> Table:
@@ -84,7 +84,7 @@ class TableValidator:
         return table
         
 
-class UpdatesValidator(): #TODO: в таблицу модет не быть этих столбцов
+class UpdatesValidator(): 
     '''
     Валидирует словарь для обновления таблицы. Если обновляется столбец "Проверено", то проверяет значение обновления и изменяет дату
     '''

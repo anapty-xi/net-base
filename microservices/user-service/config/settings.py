@@ -1,6 +1,7 @@
 import os
 
 from pathlib import Path
+from .get_secret import get_secret
 from datetime import timedelta
 from dotenv import load_dotenv
 
@@ -9,7 +10,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 
-SECRET_KEY = str(os.getenv('SECRET_KEY'))
+SECRET_KEY = get_secret('SECRET_KEY')
 
 DEBUG = False
 
@@ -125,7 +126,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'WARNING',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
@@ -151,7 +152,7 @@ USE_TZ = True
 
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.getenv('STATIC_ROOT', os.path.join(BASE_DIR, 'staticfiles'))
+STATIC_ROOT = get_secret('STATIC_ROOT')
 
 
 

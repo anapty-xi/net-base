@@ -1,16 +1,14 @@
 import os
 
 from pathlib import Path
+from .get_secret import get_secret
 from dotenv import load_dotenv
 load_dotenv()
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-
-SECRET_KEY = str(os.getenv('SECRET_KEY'))
-
+SECRET_KEY = get_secret('DB_SECRET_KEY')
 
 DEBUG = True
 
@@ -121,7 +119,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'WARNING',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
@@ -151,8 +149,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DB_POOL = None
 
-CELERY_BROKER_URL = str(os.getenv('CELERY_BROKER_URL'))
+CELERY_BROKER_URL = get_secret('CELERY_BROKER_URL')
 
 USER_SERVICE_URL = str(os.getenv('USER_SERVICE_URL'))
 
-API_KEY = str(os.getenv('API_KEY'))
+API_KEY = get_secret('API_KEY')

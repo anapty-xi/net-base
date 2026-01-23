@@ -1,12 +1,13 @@
 
 import os
 from pathlib import Path
+from .get_secret import get_secret
 from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = str(os.getenv('SECRET_KEY'))
+SECRET_KEY = get_secret('ANALYTICS_ECRET_KEY')
 
 DEBUG = True
 
@@ -106,7 +107,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'WARNING',
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
@@ -118,7 +119,7 @@ LOGGING = {
 }
 
 
-CELERY_BROKER_URL = str(os.getenv('CELERY_BROKER_URL'))
+CELERY_BROKER_URL = get_secret('CELERY_BROKER_URL')
 
 LANGUAGE_CODE = 'en-us'
 
@@ -135,4 +136,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 USER_SERVICE_URL = str(os.getenv('USER_SERVICE_URL'))
 DB_OPERATIONS_SERVICE_URL = str(os.getenv('DB_OPERATIONS_SERVICE_URL'))
-API_KEY = str(os.getenv('API_KEY'))
+API_KEY = get_secret('API_KEY')

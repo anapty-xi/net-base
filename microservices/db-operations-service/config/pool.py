@@ -2,15 +2,10 @@
 модуль для определения операций выполняющихся при запуске и отключении сервера
 '''
 
-import os
-
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from .get_secret import get_secret
 from sqlalchemy.pool import QueuePool
-from dotenv import load_dotenv
-
-
-load_dotenv()
 
 DB_ENGINE: Engine | None = None
 
@@ -21,7 +16,7 @@ def create_db_engine() -> None:
     global DB_ENGINE
     try:
         DB_ENGINE = create_engine(
-            str(os.getenv('DB_URL')),
+            get_secret('DB_URL'),
             poolclass=QueuePool,
             pool_size=5,
             max_overflow=10,

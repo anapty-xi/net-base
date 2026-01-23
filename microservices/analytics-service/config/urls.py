@@ -1,17 +1,13 @@
 from django.contrib import admin
 from django.urls import path
 from django.urls import include
-from rest_framework import status
-from rest_framework.response import Response
+from django.http import HttpResponse
 
 def health_chek(request):
-    return Response(
-        {'status': 'healthy',
-        'service': 'db-ops-service'},
-        status=status.HTTP_200_OK
-    )
+    return HttpResponse('OK', status=200)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('health/', health_chek),
     path('analytics/', include('apps.analytics.urls'))
 ]
