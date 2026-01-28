@@ -8,7 +8,7 @@ load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = get_secret('DB_SECRET_KEY')
+SECRET_KEY = get_secret('SECRET_KEY')
 
 DEBUG = True
 
@@ -149,7 +149,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 DB_POOL = None
 
-CELERY_BROKER_URL = get_secret('CELERY_BROKER_URL')
+CELERY_BROKER_URL = get_secret('CELERY_BROCKER_URL')
 
 USER_SERVICE_URL = str(os.getenv('USER_SERVICE_URL'))
 

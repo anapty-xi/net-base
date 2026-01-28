@@ -27,7 +27,7 @@ class RepositoryManager(TableGateway):
 
     def create_table(self, table: EntityTable) -> bool:
         '''
-        Создвние таблицы и заполнение ее данными
+        Создание таблицы и заполнение ее данными
         '''
         try:
             columns = [Column(col, String, nullable=True) for col in table.cols]
@@ -55,6 +55,7 @@ class RepositoryManager(TableGateway):
         '''
         Получение схемы всех таблиц или конкретной таблицы 
         '''
+        metadata_obj.clear()
         if title:
             table = self._get_table_obj(title)
             table_schema = {table.name: [col.name for col in table.columns]}

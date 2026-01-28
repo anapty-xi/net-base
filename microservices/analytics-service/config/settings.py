@@ -7,7 +7,7 @@ load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-SECRET_KEY = get_secret('ANALYTICS_ECRET_KEY')
+SECRET_KEY = get_secret('SECRET_KEY')
 
 DEBUG = True
 
@@ -119,7 +119,7 @@ LOGGING = {
 }
 
 
-CELERY_BROKER_URL = get_secret('CELERY_BROKER_URL')
+CELERY_BROKER_URL = get_secret('CELERY_BROCKER_URL')
 
 LANGUAGE_CODE = 'en-us'
 

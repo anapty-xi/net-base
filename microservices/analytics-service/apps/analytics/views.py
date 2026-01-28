@@ -19,12 +19,12 @@ def get_report(request):
     Точка только для аутентифицированнных пользователей для получения отчета о таблицах
     '''
     date = request.GET.get('date')
-    logger.info(f'date = {date}')
     if not date:
         return Response(
             {'error': 'no date'},
             status=status.HTTP_400_BAD_REQUEST
         )
+    logger.info(f'date = {date}')
     day, month, year = date.split('.')
     date = datetime.date(int(year), int(month), int(day))
 

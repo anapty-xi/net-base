@@ -8,7 +8,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = get_secret('GATE_SECRET_KEY')
+SECRET_KEY = get_secret('SECRET_KEY')
 
 
 DEBUG = True

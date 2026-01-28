@@ -152,7 +152,7 @@ USE_TZ = True
 
 
 STATIC_URL = 'static/'
-STATIC_ROOT = get_secret('STATIC_ROOT')
+STATIC_ROOT = str(os.getenv('STATIC_ROOT'))
 
 
 

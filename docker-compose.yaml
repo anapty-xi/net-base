@@ -22,26 +22,24 @@ services:
       - app-network
 
   db-service:
-    image: db-operatios-service:latest  
+    image: db-operations-service:latest  
     expose:
       - "8002"
     volumes:
       - ./exported_tables:/base-microservice/exported_tables
     env_file:
       - ./microservices/db-operations-service/.env
-    environment:
+    environment: &db_env_vars
       - API_KEY=/run/secrets/api_key
-      - CELERY_BROCKER_URL=run/secrets/celery_brocker_url
-      - SECRET_KEY=run/secrets/db_secret_key
-      - DB_URL=run/secrets/db_url
-    secrets:
+      - CELERY_BROCKER_URL=/run/secrets/celery_brocker_url
+      - SECRET_KEY=/run/secrets/db_secret_key
+      - DB_URL=/run/secrets/db_url
+    secrets: &db_secrets
       - celery_brocker_url
       - api_key
       - db_secret_key
       - db_url
     depends_on:
-      celery_worker_db:
-        condition: service_started
       db_postgres:
         condition: service_healthy
     networks:
@@ -55,17 +53,17 @@ services:
       - anal_db_data:/base-microservice/data
     env_file:
       - ./microservices/analytics-service/.env
-    environment:
-      - API_KEY=/run/secrets/api_keyxt
-      - SECRET_KEY=run/secrets/analytics_secret_key
-    secrets:
+    environment: &anal_env_vars
+      - API_KEY=/run/secrets/api_key
+      - SECRET_KEY=/run/secrets/analytics_secret_key
+      - CELERY_BROCKER_URL=/run/secrets/celery_brocker_url
+    secrets: &anal_secrets
       - api_key
       - analytics_secret_key
+      - celery_brocker_url
     depends_on:
       db-service:
         condition: service_healthy
-      celery_worker_anal:
-        condition: service_started
     networks:
       - app-network
 
@@ -76,7 +74,7 @@ services:
     env_file:
       - ./api-gateway/.env
     environment:
-      - SECRET_KEY=run/secrets/gate_secret_key
+      - SECRET_KEY=/run/secrets/gate_secret_key
     secrets:
       - gate_secret_key
     depends_on:
@@ -119,6 +117,8 @@ services:
       - ./exported_tables:/base-microservice/exported_tables 
     env_file:
       - ./microservices/db-operations-service/.env
+    environment: *db_env_vars
+    secrets: *db_secrets
     depends_on:
       redis:
         condition: service_healthy
@@ -131,7 +131,9 @@ services:
     volumes:
       - anal_db_data:/base-microservice/data
     env_file:
-      - ./microservices/db-operations-service/.env
+      - ./microservices/analytics-service/.env
+    environment: *anal_env_vars
+    secrets: *anal_secrets
     depends_on:
       redis:
         condition: service_healthy
@@ -143,8 +145,14 @@ services:
     command: celery -A config beat --loglevel=info
     env_file:
       - ./microservices/db-operations-service/.env
+    environment: *db_env_vars
+    secrets: *db_secrets
     depends_on:
       redis:
+        condition: service_healthy
+      celery_worker_db:
+        condition: service_started
+      db-service:
         condition: service_healthy
     networks:
       - app-network
@@ -154,8 +162,14 @@ services:
     command: celery -A config beat --loglevel=info
     env_file:
       - ./microservices/analytics-service/.env
+    environment: *anal_env_vars
+    secrets: *anal_secrets
     depends_on:
       redis:
+        condition: service_healthy
+      celery_worker_anal:
+        condition: service_started
+      analytics-service:
         condition: service_healthy
     networks:
       - app-network
