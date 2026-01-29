@@ -22,7 +22,6 @@ def health_cheack(request):
     return HttpResponse('OK', status=200)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('health/', health_cheack),
     path('', include('apps.api_gateway.urls'))
 ]

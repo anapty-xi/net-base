@@ -5,5 +5,6 @@ from . import views
 urlpatterns = [
     re_path(r'^db/.*', views.proxy_view, name='db-proxy'),
     re_path(r'^user/.*', views.proxy_view, name='user-proxy'),
+    re_path(r'^admin/.*', views.proxy_view, name='user-admin-proxy'),
     re_path(r'^analytics/.*', views.proxy_view, name='analytics-proxy'),
 ]
