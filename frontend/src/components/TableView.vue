@@ -214,7 +214,7 @@ const submitData = async () => {
   }, {});
 
   try {
-    const response = await axios.post(SEARCH_URL, queryPayload);
+    const response = await axios.get(SEARCH_URL, {params: queryPayload});
     const structuredRows = response.data.rows || response.data;
 
     if (!Array.isArray(structuredRows) || fields.value.length === 0) {

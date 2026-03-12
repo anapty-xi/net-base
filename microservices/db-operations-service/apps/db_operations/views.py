@@ -64,17 +64,17 @@ def create_table(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedCustom]) 
 def get_all_tabels(request):
-    '''получание всех таблиц и их столбцов'''
+    '''получeние всех таблиц и их столбцов'''
 
     infrastucture = RepositoryManager()
     usecase = table_usecases.TableInfo(infrastucture)
     tables_info = usecase.execute()
-    if not tables_info:
-        logger.error('get_all_tables/ data base cannt get all table schemas')
-        return Response(
-            {'error': 'ошибка запроса к бд'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    # if not tables_info:
+    #     logger.error('get_all_tables/ data base cannt get all table schemas')
+    #     return Response(
+    #         {'error': 'ошибка запроса к бд'},
+    #         status=status.HTTP_500_INTERNAL_SERVER_ERROR
+    #     )
     logger.info(f'get_all_tables/ client got schemas:\n{tables_info}')
     return Response(
         tables_info,
@@ -84,7 +84,7 @@ def get_all_tabels(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticatedCustom])
 def get_table(request, table):
-    '''получание столбов конкретной таблицы'''
+    '''получение столбов конкретной таблицы'''
 
     infrastucture = RepositoryManager()
     usecase = table_usecases.TableInfo(infrastucture)
@@ -120,12 +120,12 @@ def delete_table(request, table):
         status=status.HTTP_200_OK
     )
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticatedCustom])
 def get_rows(request, table):
-    '''получание колонок по определенным значениям столбцов'''
+    '''получение строк по определенным значениям столбцов'''
 
-    data = request.data
+    data = request.query_params.dict()
     infrastucture = RepositoryManager()
     usecase = table_usecases.GetRows(infrastucture)
     rows = usecase.execute(table, data)
@@ -137,7 +137,7 @@ def get_rows(request, table):
         )
     logger.error(f'get_rows/ while get_rows error occured, input data:\ntable: {table}\nquery_params: {data}')
     return Response(
-        {'errors': 'данные не верны'},
+        {'errors': 'ни одна строка не удволетворяет фильтру'},
         status=status.HTTP_400_BAD_REQUEST
     )
 
